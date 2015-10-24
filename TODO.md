@@ -17,10 +17,8 @@
 - checking for other wigs features
 
 # Other
- - If no wigwam found in current dir, use the global one (in home). Enforce using the global one by using --global for all commands.
  - gentle terminal reset on CTRL-C. Possible at all? Related to Linux kill signal interception
  - test on python 2.6, 2.7, 3.x
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
- - move the website to an orphan branch of this repo
  - add detailed drop-down for every wig on the website
  - Wigwamfile should list installed features
