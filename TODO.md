@@ -10,6 +10,7 @@
  - support for setup.m, setup.lua, setup.py
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
+ - setup.* writes should be transactional
 
 # Wig API
 - a way to provision a package/feature from another package feature trigger
