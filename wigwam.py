@@ -787,7 +787,6 @@ def gen_installation_script(installation_script_path, wigs, env, installation_or
 
 	sys.stdout.write('Updating installation script...  ')
 
-	root_dir = os.getcwd()
 	with open(installation_script_path, 'w') as out:
 		def w(x, prepend = '', stream = out):
 			if x != []:
@@ -875,7 +874,7 @@ EOF
 				return any([x in wig.skip_stages for x in xs])
 
 			if not s('all'):
-				w('cd "%s"' % root_dir)
+				w('cd "%s"' % P.root)
 				w('PREFIX="%s"' % P.prefix)
 				w('LOGBASE="%s"' % P.log_base(wig_name))
 				w(S.mkdir_p('$LOGBASE'))
@@ -1008,7 +1007,7 @@ if __name__ == '__main__':
 
 	args = vars(parser.parse_args())
 	use_global, extra_repos = args.pop('global'), args.pop('repo')
-	P.init(root = P.wigwamdir if (os.path.exists(P.wigwamdir) and not use_global) else os.path.expanduser('~/' + P.wigwamdir), extra_repos = extra_repos)
+	P.init(root = os.path.abspath(P.wigwamdir) if (os.path.exists(P.wigwamdir) and not use_global) else os.path.expanduser('~/' + P.wigwamdir), extra_repos = extra_repos)
 	
 	cmd = args.pop('func')
 	cmd(**args)
