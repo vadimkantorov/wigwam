@@ -797,7 +797,7 @@ def gen_installation_script(installation_script_path, wigs, env, installation_or
 		w('trap show_log EXIT')
 		w('trap on_ctrl_c SIGINT')
 		w('exec 3>&1')
-		w('source "$PWD/%s"' % P.setup_sh)
+		w('source "%s"' % P.setup_sh)
 		w('TIC="$(date +%s)"')
 		w('')
 		w('''function show_log {
@@ -876,8 +876,8 @@ EOF
 
 			if not s('all'):
 				w('cd "%s"' % root_dir)
-				w('PREFIX="$PWD/%s"' % P.prefix)
-				w('LOGBASE="$PWD/%s"' % P.log_base(wig_name))
+				w('PREFIX="%s"' % P.prefix)
+				w('LOGBASE="%s"' % P.log_base(wig_name))
 				w(S.mkdir_p('$LOGBASE'))
 	
 			with Stage('Fetching', 'fetch.txt', s('all', 'fetch')) as u:
