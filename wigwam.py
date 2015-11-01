@@ -15,7 +15,6 @@ import multiprocessing
 
 class P:
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
-	wigwamfile = 'Wigwamfile'
 	wigwamdir = '.wigwam'
 	userwigdir = 'wigs'
 	python_prefix_schemes = [('python/PREFIXSCHEME', 'lib/python2.7/site-packages', 'bin', 'include/python2.7'), ('python/HOMESCHEME', 'lib/python', 'bin', 'include/python'), ('python/USERSCHEME', 'lib/python2.7/site-packages', 'bin', 'include/python2.7')] # https://docs.python.org/2/install/
@@ -37,6 +36,7 @@ class P:
 		P.setup_m = p('setup.m')
 		P.build_script = p('build.generated.sh')
 		P.install_script = p('install.generated.sh')
+		P.wigwamfile = p('Wigwamfile')
 		P.wigwamfile_installed = p('Wigwamfile.installed')
 		P.wigwamfile_old = p('Wigwamfile.old')
 
