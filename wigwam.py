@@ -673,8 +673,7 @@ def build(dry, old = None, script_path = None, seeds = None, force_seeds_reinsta
 
 def remove(wig_names, dangerous):
 	init()
-
-	assert dangerous == True
+	
 	requested = DictConfig.read(P.wigwamfile)
 	installed = DictConfig.read(P.wigwamfile_installed)
 	for wig_name in wig_names:
