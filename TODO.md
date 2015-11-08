@@ -7,7 +7,7 @@
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
 
 # wigwam build
- - support for setup.m, setup.lua, setup.py
+ - support for setup.m, setup.lua, setup.py. rename to activate_wigwam.*
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
@@ -24,5 +24,4 @@
  - add detailed drop-down for every wig on the website
  - Wigwamfile should list installed features
  - test protobuf wig
- - test wigwam install openblas when it's already installed
- - add cuda to lib_dirs
+ - Fix wigwam_debug.sh prefix issues
