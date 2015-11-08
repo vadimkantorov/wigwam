@@ -20,17 +20,17 @@ class caffe(Wig):
 
 	def switch_cudnn_on(self):
 		self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
+		self.config_fixes += '''| sed 's$# USE_CUDNN$USE_CUDNN := 1# USE_CUDNN$' '''
+		
+	def switch_cuda_on(self):
+		self.lib_dirs += [os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '../lib64')]
+		self.config_fixes += '''| sed 's$CUDA_DIR := /usr/local/cuda$CUDA_DIR := %s#CUDA_DIR := /usr/local/cuda$' ''' % os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..')
 	
 	def switch_python_on(self):
 		self.after_make += [S.make(self.make_flags + ['pycaffe'])]
+		self.config_fixes += '''| sed 's$# WITH_PYTHON_LAYER$WITH_PYTHON_LAYER := 1# WITH_PYTHON_LAYER$' '''
 
 	def gen_configure_snippet(self):
-		if '+cudnn' in self.features_on_off:
-			self.config_fixes += '''| sed 's$# USE_CUDNN$USE_CUDNN := 1# USE_CUDNN$' '''
-
-		if '+cuda' in self.features_on_off:
-			self.config_fixes += '''| sed 's$CUDA_DIR := /usr/local/cuda$CUDA_DIR := %s#CUDA_DIR := /usr/local/cuda$' ''' % os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..')
-
 		return ['cat Makefile.config.example %s > Makefile.config' % self.config_fixes]
 
 	def gen_install_snippet(self):
