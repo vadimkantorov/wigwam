@@ -36,7 +36,7 @@ class P:
 		P.setup_m = p('setup.m')
 		P.build_script = p('build.generated.sh')
 		P.install_script = p('install.generated.sh')
-		P.wigwamfile = p('Wigwamfile')
+		P.wigwamfile = p('../Wigwamfile')
 		P.wigwamfile_installed = p('Wigwamfile.installed')
 		P.wigwamfile_old = p('Wigwamfile.old')
 
@@ -313,13 +313,14 @@ class Wig:
 		self.env = dict_env
 		self.provision_features(dict_config.get(W.FEATURES, '').split())
 		self.sources = dict_config.get(W.SOURCES) or self.sources
+		assert self.sources != None
 		self.source_fetcher.configure(self, self.sources)
 
 	def trace(self):
 		t = {W.DEPENDS_ON : self.depends_on,
 			W.FEATURES : ' '.join(self.features_on_off),
 			W.SOURCES : self.sources,
-			W.FORMATTED_VERSION : self.sources.split()[1]
+			W.FORMATTED_VERSION : (self.sources.split() + ['N/A'])[1]
 		}
 		t.update(self.source_fetcher.clues)
 		return t
@@ -429,6 +430,7 @@ class PythonWig(Wig):
 
 class PipWig(Wig):
 	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
+	sources = 'pip'
 
 	def setup(self):
 		self.skip('fetch', 'configure', 'make')
@@ -573,16 +575,16 @@ class WigConfig:
 
 	def diff(self, graph):
 		s = lambda e: set(e) if isinstance(e, list) else set([e])
-		fingerprint = lambda t: set(filter(bool, set.union(*map(s, map(t.get, [W.URI, W.VERSION, W.GIT_COMMIT, W.FEATURES, W.DEPENDS_ON])))))
+		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [W.URI, W.VERSION, W.GIT_COMMIT, W.FEATURES, W.DEPENDS_ON]))))) if w != None else set(['N/A'])
 
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
-			other_fingerprint = fingerprint(other.trace()) if other != None else set()
+			other_fingerprint = fingerprint(other)
 			other_sources = other.sources if other != None else None
 			other_features_on_off = other.features_on_off if other != None else []
 			
-			if fingerprint(wig.trace()) != other_fingerprint:
+			if fingerprint(wig) != other_fingerprint:
 				to_install[wig_name] = {}
 				features_on_off = [feat for feat in wig.features_on_off if feat not in other_features_on_off]
 				if len(features_on_off) > 0:
@@ -633,7 +635,7 @@ def install(wig_strings, dry, config, reinstall, only, dangerous):
 		dict_config.update({arg: args[arg] for arg in ['sources', 'features'] if args[arg] != None})
 		end = end.patch({ wig_name : dict_config })
 		wig_names.append(wig_name)
-	
+
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only)
 
@@ -646,10 +648,11 @@ def build(dry, old = None, script_path = None, seeds = None, force_seeds_reinsta
 
 	requested = WigConfig(DictConfig.read(P.wigwamfile))
 	installed = WigConfig(DictConfig.read(P.wigwamfile_installed))
-	requested_installed_diff = requested.diff(installed).keys()
-	wig_name_subset = set(seeds) if install_only_seeds else (set(requested_installed_diff) | (set(seeds) if force_seeds_reinstall else set([])))
+	requested_installed_diff = set(requested.diff(installed).keys())
+	seeds = set(seeds)
+	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
 
-	if seeds != None:
+	if seeds != None and seeds <= requested_installed_diff:
 		to_install = requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset)
 	else:
 		to_install = requested_installed_diff
