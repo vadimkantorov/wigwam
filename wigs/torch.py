@@ -53,6 +53,7 @@ class torch(CmakeWig):
 
 	def switch_cuda_on(self):
 		CUDA_BIN_PATH = os.path.dirname(self.cfg('PATH_TO_NVCC'))
+		self.lib_dirs += [os.path.join(CUDA_BIN_PATH, '../lib64')]
 		self.after_install += [S.export('CUDA_BIN_PATH', CUDA_BIN_PATH)]
 		self.after_install += map(self.luarocks_make, [
 			'extra/cutorch/rocks/cutorch-scm-1.rockspec',
