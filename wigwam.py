@@ -32,8 +32,8 @@ class P:
 		P.deb_root = p('deb')
 		P.debug_root = p('debug')
 
-		P.setup_sh = p('setup.sh')
-		P.setup_m = p('setup.m')
+		P.activate_sh = p('wigwam_activate.sh')
+		P.activate_m = p('wigwam_activate.m')
 		P.build_script = p('build.generated.sh')
 		P.install_script = p('install.generated.sh')
 		P.wigwamfile = p('../Wigwamfile')
@@ -43,7 +43,7 @@ class P:
 		P.artifact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root]
 
 		P.generated_installation_scripts = [P.build_script, P.install_script]
-		P.generated_files = P.generated_installation_scripts + [P.wigwamfile_installed, P.wigwamfile_old, P.setup_sh, P.setup_m]
+		P.generated_files = P.generated_installation_scripts + [P.wigwamfile_installed, P.wigwamfile_old, P.activate_sh, P.activate_m]
 
 		P.all_dirs = [P.root] + P.artifact_dirs
 
@@ -659,7 +659,7 @@ def build(dry, old = None, script_path = None, seeds = None, force_seeds_reinsta
 
 	installation_order = requested.compute_installation_order(to_install, up = True, wig_name_subset = wig_name_subset)
 	script_path = script_path or P.build_script
-	gen_setup_star_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs, requested.matlab_dirs)
+	gen_activate_star_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs, requested.matlab_dirs)
 	gen_installation_script(script_path, requested.wigs, requested.env, installation_order)
 
 	if not dry:
@@ -768,7 +768,7 @@ def search(wig_name, output_json):
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
 def enter():
-	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.setup_sh
+	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.activate_sh
 	subprocess.call(['bash', '-c', cmd])
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
@@ -798,7 +798,7 @@ def gen_installation_script(installation_script_path, wigs, env, installation_or
 		w('trap show_log EXIT')
 		w('trap on_ctrl_c SIGINT')
 		w('exec 3>&1')
-		w('source "%s"' % P.setup_sh)
+		w('source "%s"' % P.activate_sh)
 		w('TIC="$(date +%s)"')
 		w('')
 		w('''function show_log {
@@ -898,7 +898,7 @@ EOF
 					d('cd "%s"' % os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 
 				d('''PREFIX="%s"''' % os.path.abspath(P.prefix))
-				d('source "$PREFIX/../../%s"' % P.setup_sh)
+				d('source "$PREFIX/../../%s"' % P.activate_sh)
 				d('')
 				d(['# ' + line for line in S.dump_env.split('\n')[1:-1]])
 				d('')
@@ -926,16 +926,16 @@ EOF
 	
 	print 'ok [%s]' % installation_script_path
 
-def gen_setup_star_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
+def gen_activate_star_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
 	export_PATH = lambda var, val: S.export(var, ':'.join(map(os.path.abspath, val) + ['$%s' % var]))
-	with open(P.setup_sh, 'w') as out:
+	with open(P.activate_sh, 'w') as out:
 		print >> out, export_PATH(S.PATH, bin_dirs)
 		print >> out, export_PATH(S.LD_LIBRARY_PATH, lib_dirs)
 		print >> out, export_PATH(S.LIBRARY_PATH, lib_dirs)
 		print >> out, export_PATH(S.CPATH, include_dirs)
 		print >> out, export_PATH(S.PYTHONPATH, python_dirs)
 
-	with open(P.setup_m, 'w') as out:
+	with open(P.activate_m, 'w') as out:
 		for wig_name, matlab_root in matlab_dirs.items():
 			print >> out, "%s_ROOT = '%s';" % (wig_name.upper().replace('-', '_'), os.path.abspath(matlab_root))
 
