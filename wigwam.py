@@ -767,9 +767,12 @@ def search(wig_name, output_json):
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
-def enter():
-	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.activate_sh
-	subprocess.call(['bash', '-c', cmd])
+def enter(path):
+	if path:
+		print P.activate_sh
+	else:
+		cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.activate_sh
+		subprocess.call(['bash', '-c', cmd])
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
 	for script_path in P.generated_installation_scripts:
@@ -970,7 +973,10 @@ if __name__ == '__main__':
 	subparsers.add_parser('clean').set_defaults(func = clean)
 	subparsers.add_parser('lint').set_defaults(func = lint)
 	subparsers.add_parser('init').set_defaults(func = init)
-	subparsers.add_parser('in').set_defaults(func = enter)
+	
+	cmd = subparsers.add_parser('in')
+	cmd.set_defaults(func = enter)
+	cmd.add_argument('--path', action = 'store_true')
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
