@@ -639,7 +639,7 @@ def install(wig_strings, dry, config, reinstall, only, dangerous):
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only)
 
-def build(dry, old = None, script_path = None, seeds = None, force_seeds_reinstall = False, install_only_seeds = False):
+def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False):
 	init()
 
 	if lint(old = old) == None:
