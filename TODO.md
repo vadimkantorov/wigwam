@@ -23,3 +23,7 @@
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
  - test protobuf wig
+
+# Website
+ - add wig package uri to details
+ - add wig source uri to details
