@@ -1,12 +1,10 @@
 class opencv(CmakeWig):
 	tarball_uri = 'https://github.com/Itseez/opencv/archive/$RELEASE_VERSION$.tar.gz'
 	last_release_version ='v2.4.11'
-	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg']
 	dependencies = ['pkg-config']
 	optional_dependencies = ['ffmpeg']
-
-	def setup(self):
-		self.require(features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg'])
+	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg']
+	default_features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg']
 
 	def switch_ffmpeg_on(self):
 		self.require('ffmpeg')

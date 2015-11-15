@@ -3,8 +3,9 @@ class torch(CmakeWig):
 	git_init_submodules = True
 	dependencies = ['openblas', 'readline', 'ncurses', 'sdl', 'imagemagick', 'magma']
 	optional_dependencies = ['gnuplot', 'fftw', 'sox']
-	supported_features = ['qt', 'cuda', 'dsp', 'cudnn']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
+	supported_features = ['qt', 'cuda', 'dsp', 'cudnn']
+	default_features = ['+dsp', '+cuda', '+qt', '+cudnn']
 
 	def luarocks_install(self, pkg):
 		wig = LuarocksWig(pkg)
@@ -18,7 +19,6 @@ class torch(CmakeWig):
 		return '( cd "%s"; %s )' % (os.path.join(*splitted[:2]), '; '.join(wig.gen_make_snippet()))
 
 	def setup(self):
-		self.require(features = ['+dsp', '+cuda', '+qt', '+cudnn'])
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
 		
 		self.after_install += [S.CD_PARENT]

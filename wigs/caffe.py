@@ -1,12 +1,12 @@
 class caffe(Wig):
 	git_uri = 'https://github.com/BVLC/caffe'
 	dependencies = ['boost', 'opencv', 'protobuf', 'glog', 'gflags', 'hdf5', 'leveldb', 'snappy', 'lmdb']
-	supported_features = ['openblas', 'python', 'cuda', 'cudnn']
 	config_acces = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	optional_dependencies = ['openblas']
+	supported_features = ['openblas', 'python', 'cuda', 'cudnn']
+	default_features = ['+openblas', '+python']
 	
 	def setup(self):
-		self.require(features = ['+openblas', '+python'])
 		self.skip('make parallel')
 
 		self.python_dirs += [os.path.join(self.paths.src_dir, 'python')]

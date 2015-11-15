@@ -14,14 +14,13 @@
 
 # Wig API
 - a way to provision a package/feature from another package feature trigger
-- default_features, build_dependencies, no_shared
+- build_dependencies, no_shared
 - checking for other wigs features
 
 # Other
  - gentle terminal reset on CTRL-C. Possible at all? Related to Linux kill signal interception
  - test on python 2.6, 2.7, 3.x
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
- - add detailed drop-down for every wig on the website
  - Wigwamfile should list installed features
  - test protobuf wig
  - Fix wigwam_debug.sh prefix issues

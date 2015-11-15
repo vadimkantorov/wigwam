@@ -3,9 +3,9 @@ class atlas(Wig):
 	tar_strip_components = 1
 	last_release_version = 'v3.10.2'
 	supported_features = ['threads', 'lapack']
+	default_features = ['+lapack']
 
 	def setup(self):
-		self.require(features = ['+lapack'])
 		self.before_make += [S.CD_BUILD]
 
 	def gen_configure_snippet(self):

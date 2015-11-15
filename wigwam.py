@@ -211,6 +211,7 @@ class Wig:
 	dependencies = []
 	optional_dependencies = []
 	supported_features = []
+	default_features = []
 	last_release_version = None
 
 	all_installation_stages = ['fetch', 'configure', 'make', 'install']
@@ -481,6 +482,7 @@ class WigConfig:
 			for dep_wig_name in wig.dependencies:
 				wig.require(dep_wig_name)
 			wig.setup()
+			wig.require(features = wig.default_features)
 			wig.require(features = features_in_dict_config)
 			self.wigs[wig_name] = wig
 
