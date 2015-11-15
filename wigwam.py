@@ -654,7 +654,7 @@ def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall
 	seeds = set(seeds)
 	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
 
-	if seeds != None and seeds <= requested_installed_diff:
+	if seeds and seeds <= requested_installed_diff:
 		to_install = requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset)
 	else:
 		to_install = requested_installed_diff
