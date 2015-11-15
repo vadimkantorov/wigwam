@@ -903,7 +903,7 @@ EOF
 					d('cd "%s"' % os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 
 				d('''PREFIX="%s"''' % os.path.abspath(P.prefix))
-				d('source "$PREFIX/../../%s"' % P.activate_sh)
+				d('source "%s"' % P.activate_sh)
 				d('')
 				d(['# ' + line for line in S.dump_env.split('\n')[1:-1]])
 				d('')

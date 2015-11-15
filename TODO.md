@@ -1,5 +1,5 @@
 # wigwam install 
- - should fail when a requested feature doesnt exist
+ - Parsing Wigwamfile.installed should not break if features/config values are not there. Parsing should be light-weight
  - change way of specifyinng version and features, so that quotes are note needed
  
 # wigwam upgrade
@@ -7,7 +7,7 @@
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
 
 # wigwam build
- - support for setup.m, setup.lua, setup.py. rename to activate_wigwam.*
+ - support for setup.m, setup.lua, setup.py.
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
@@ -23,4 +23,3 @@
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
  - test protobuf wig
- - Fix wigwam_debug.sh prefix issues
