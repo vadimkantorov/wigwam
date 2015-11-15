@@ -140,7 +140,7 @@
 						<tr class="collapse" id="wig-details-{{ forloop.index }}">
 							<td colspan="4">
 								<div>
-									dependencies:&nbsp;{{ wig.dependencies | array_to_sentence_string }}
+									dependencies:&nbsp;{% if wig.dependencies.length > 0 %}{{ wig.dependencies | array_to_sentence_string }}{% else %}none{% endif %}
 								</div>
 							</td>
 						</tr>
