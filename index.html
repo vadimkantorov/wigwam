@@ -130,13 +130,15 @@
   						</tr>
   					</thead>
   					<tbody>
-  						{% for wig in site.data.wigs %}
+						{% assign sorted_wigs = site.data.wigs | sort:"name" %}
+  						{% for wig in sorted_wigs %}
 						<tr>
 							<td>{{ wig.name }}</td>
 							<td>{{ wig.formatted_version }}</td>
   							<td>
 								<ul>
-									{% for feature in wig.supported_features order:ascending %}
+									{% assign sorted_features = wig.supported_features | sort %}
+									{% for feature in sorted_features %}
 									<li>{{ feature }}</li>
 									{% endfor %}
 								</ul>
