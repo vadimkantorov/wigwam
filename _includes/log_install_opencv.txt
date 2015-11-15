@@ -1,0 +1,35 @@
+Lint reconfigured 3 packages (backup in ".wigwam/Wigwamfile.old").
+4 packages to be installed in the order below:
+pkg-config
+      yasm
+    ffmpeg    requires  yasm
+    opencv    requires  pkg-config, ffmpeg
+
+Updating installation script...  ok [.wigwam/install.generated.sh]
+Running installation script now:
+
+pkg-config:
+      Fetching...  ok [elapsed 0m21s]
+   Configuring...  ok [elapsed 0m24s]
+     Compiling...  ok [elapsed 0m24s]
+    Installing...  ok [elapsed 0m24s]
+
+yasm:
+      Fetching...  ok [elapsed 0m33s]
+   Configuring...  ok [elapsed 0m36s]
+     Compiling...  ok [elapsed 0m38s]
+    Installing...  ok [elapsed 0m38s]
+
+ffmpeg:
+      Fetching...  ok [elapsed 0m44s]
+   Configuring...  ok [elapsed 0m51s]
+     Compiling...  ok [elapsed 1m32s]
+    Installing...  ok [elapsed 1m33s]
+
+opencv:
+      Fetching...  ok [elapsed 7m54s]
+   Configuring...  ok [elapsed 8m2s]
+     Compiling...  ok [elapsed 10m34s]
+    Installing...  ok [elapsed 10m35s]
+
+ALL OK. KTHXBAI!

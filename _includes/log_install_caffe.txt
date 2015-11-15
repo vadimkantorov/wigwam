@@ -1,0 +1,105 @@
+Lint reconfigured 13 packages (backup in ".wigwam/Wigwamfile.old").
+14 packages to be installed in the order below:
+    gflags
+   leveldb
+  protobuf
+      hdf5
+      yasm
+      glog
+pkg-config
+    ffmpeg    requires  yasm
+    opencv    requires  pkg-config, ffmpeg
+    snappy
+     boost
+      lmdb
+  openblas
+     caffe    requires  boost, opencv, protobuf, glog, gflags, hdf5, leveldb, snappy, lmdb, openblas
+
+Updating installation script...  ok [.wigwam/install.generated.sh]
+Running installation script now:
+
+gflags:
+      Fetching...  ok [elapsed 0m1s]
+   Configuring...  ok [elapsed 0m3s]
+     Compiling...  ok [elapsed 0m5s]
+    Installing...  ok [elapsed 0m5s]
+
+leveldb:
+      Fetching...  ok [elapsed 0m6s]
+   Configuring...  skipped
+     Compiling...  ok [elapsed 0m25s]
+    Installing...  ok [elapsed 0m25s]
+
+protobuf:
+      Fetching...  ok [elapsed 0m28s]
+   Configuring...  ok [elapsed 0m58s]
+     Compiling...  ok [elapsed 1m29s]
+    Installing...  ok [elapsed 1m33s]
+
+hdf5:
+      Fetching...  ok [elapsed 2m52s]
+   Configuring...  ok [elapsed 3m6s]
+     Compiling...  ok [elapsed 4m4s]
+    Installing...  ok [elapsed 4m5s]
+
+yasm:
+      Fetching...  ok [elapsed 4m17s]
+   Configuring...  ok [elapsed 4m19s]
+     Compiling...  ok [elapsed 4m22s]
+    Installing...  ok [elapsed 4m22s]
+
+glog:
+      Fetching...  ok [elapsed 4m24s]
+   Configuring...  ok [elapsed 4m29s]
+     Compiling...  ok [elapsed 4m34s]
+    Installing...  ok [elapsed 4m34s]
+
+pkg-config:
+      Fetching...  ok [elapsed 4m45s]
+   Configuring...  ok [elapsed 4m48s]
+     Compiling...  ok [elapsed 4m48s]
+    Installing...  ok [elapsed 4m48s]
+
+ffmpeg:
+      Fetching...  ok [elapsed 5m1s]
+   Configuring...  ok [elapsed 5m9s]
+     Compiling...  ok [elapsed 5m46s]
+    Installing...  ok [elapsed 5m47s]
+
+opencv:
+      Fetching...  ok [elapsed 12m3s]
+   Configuring...  ok [elapsed 12m11s]
+     Compiling...  ok [elapsed 14m48s]
+    Installing...  ok [elapsed 14m48s]
+
+snappy:
+      Fetching...  ok [elapsed 14m49s]
+   Configuring...  ok [elapsed 14m54s]
+     Compiling...  ok [elapsed 14m56s]
+    Installing...  ok [elapsed 14m56s]
+
+boost:
+      Fetching...  ok [elapsed 16m33s]
+   Configuring...  skipped
+     Compiling...  skipped
+    Installing...  ok [elapsed 18m8s]
+
+lmdb:
+      Fetching...  ok [elapsed 18m10s]
+   Configuring...  skipped
+     Compiling...  ok [elapsed 18m12s]
+    Installing...  ok [elapsed 18m12s]
+
+openblas:
+      Fetching...  ok [elapsed 18m57s]
+   Configuring...  skipped
+     Compiling...  ok [elapsed 20m4s]
+    Installing...  ok [elapsed 20m4s]
+
+caffe:
+      Fetching...  ok [elapsed 22m11s]
+   Configuring...  ok [elapsed 22m11s]
+     Compiling...  ok [elapsed 41m10s]
+    Installing...  ok [elapsed 41m10s]
+
+ALL OK. KTHXBAI!

@@ -1,0 +1,76 @@
+Lint reconfigured 9 packages (backup in ".wigwam/Wigwamfile.old").
+10 packages to be installed in the order below:
+  openblas
+  readline
+   ncurses
+       sdl
+imagemagick
+     magma    requires  openblas
+      fftw
+       sox
+   gnuplot
+     torch    requires  openblas, readline, ncurses, sdl, imagemagick, magma, fftw, sox, gnuplot
+
+Updating installation script...  ok [.wigwam/install.generated.sh]
+Running installation script now:
+openblas:
+      Fetching...  ok [elapsed 0m40s]
+   Configuring...  skipped
+     Compiling...  ok [elapsed 1m52s]
+    Installing...  ok [elapsed 1m52s]
+
+readline:
+      Fetching...  ok [elapsed 2m13s]
+   Configuring...  ok [elapsed 2m19s]
+     Compiling...  ok [elapsed 2m19s]
+    Installing...  ok [elapsed 2m19s]
+
+ncurses:
+      Fetching...  ok [elapsed 2m34s]
+   Configuring...  ok [elapsed 2m40s]
+     Compiling...  ok [elapsed 2m45s]
+    Installing...  ok [elapsed 2m54s]
+
+sdl:
+      Fetching...  ok [elapsed 3m9s]
+   Configuring...  ok [elapsed 3m20s]
+     Compiling...  ok [elapsed 3m35s]
+    Installing...  ok [elapsed 3m38s]
+
+imagemagick:
+      Fetching...  ok [elapsed 4m46s]
+   Configuring...  ok [elapsed 5m8s]
+     Compiling...  ok [elapsed 5m47s]
+    Installing...  ok [elapsed 5m49s]
+
+magma:
+      Fetching...  ok [elapsed 6m18s]
+   Configuring...  ok [elapsed 6m18s]
+     Compiling...  ok [elapsed 10m49s]
+    Installing...  ok [elapsed 10m49s]
+
+fftw:
+      Fetching...  ok [elapsed 11m7s]
+   Configuring...  ok [elapsed 11m18s]
+     Compiling...  ok [elapsed 11m38s]
+    Installing...  ok [elapsed 11m39s]
+
+sox:
+      Fetching...  ok [elapsed 11m40s]
+   Configuring...  ok [elapsed 11m48s]
+     Compiling...  ok [elapsed 11m54s]
+    Installing...  ok [elapsed 11m54s]
+
+gnuplot:
+      Fetching...  ok [elapsed 12m2s]
+   Configuring...  ok [elapsed 12m11s]
+     Compiling...  ok [elapsed 12m20s]
+    Installing...  ok [elapsed 12m21s]
+
+torch:
+      Fetching...  ok [elapsed 14m28s]
+   Configuring...  ok [elapsed 14m29s]
+     Compiling...  ok [elapsed 14m48s]
+    Installing...  ok [elapsed 18m37s]
+    
+ALL OK. KTHXBAI!
