@@ -125,7 +125,8 @@
   						<tr>
   							<th>name</th>
 							<th>version</th>
-  							<th>dependencies</th>
+  							<th>features</th>
+							<th>details</th>
   						</tr>
   					</thead>
   					<tbody>
@@ -133,8 +134,16 @@
 						<tr>
 							<td>{{ wig.name }}</td>
 							<td>{{ wig.formatted_version }}</td>
-  							<td>{{ wig.dependencies | array_to_sentence_string }}</td>
+  							<td>{{ wig.supported_features | array_to_sentence_string }}</td>
+							<td><a data-toggle="collapse" data-target="#wig-details-{{ forloop.index }}">details</a></td>
   						</tr>
+						<tr class="collapse" id="wig-details-{{ forloop.index }}">
+							<td colspan="4">
+								<div>
+									dependencies:&nbsp;{{ wig.dependencies | array_to_sentence_string }}
+								</div>
+							</td>
+						</tr>
   						{% endfor %}
   					</tbody>
   				</table>
