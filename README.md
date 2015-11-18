@@ -22,7 +22,7 @@ or by installing Caffe:
  - ```wigwam build``` - fetches and builds all dependencies specified in the ```Wigwamfile``` located in the current directory into ```.wigwam```
  - ```wigwam install packagename``` - fetches the package, appends it to the ```Wigwamfile``` located in the current directory and runs build
  - ```wigwam clean``` - cleans ```.wigwam/src``` and ```.wigwam/prefix``` and removes ```.wigwam/download_configure_build.generated.sh```
- - ```wigwam enter``` - executes ```.wigwam/setup.sh``` and makes available the installed binaries and libraries
+ - ```wigwam in``` - executes ```.wigwam/wigwam_activate.sh``` and makes available the installed binaries and libraries
 
 # Wigwamfile
 
@@ -33,12 +33,3 @@ or by installing Caffe:
  - ```.wigwam/prefix``` - where all packages binaries get installed
  - ```.wigwam/src``` - where the package source trees get unpacked
  - ```.wigwam/logs``` - where detailed package installation logs go
- - ```.wigwam/build.generated.sh``` - the generated script that downloads, unpacks, configures, makes and make installs the packages
- - ```.wigwam/setup.sh```- the generated script that modifies PATH, LD_LIBRARY_PATH, PYTHONPATH, MATLABPATH, LUA_PATH environment variables making the packages and their Python, Matlab, Lua extensions discoverable
- 
-# Wigs
-Python-scripts that contain the know-how about downloading, configuring and building a package.
-
-# Enjoy!
-
-![KAIVOPUISTO. Copyright by BENJAMIN SUOMELA](http://www.helsinkistreet.fi/wp-content/uploads/2014/05/Benjamin-Suomela-Kaivopuist.jpg)
