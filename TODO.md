@@ -8,10 +8,12 @@
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
 
 # wigwam build
- - support for setup.m, setup.lua, setup.py.
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
+ - wigwam_activate.m: Should set the env vars + be called in S.matlab
+ - wigwam_activate.py
+ - wigwam_activate.lua
 
 # Wig API
 - a way to provision a package/feature from another package feature trigger
