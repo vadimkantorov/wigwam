@@ -27,6 +27,7 @@
  - Wigwamfile should list installed features
  - test protobuf wig
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
+ - OpenBLAS should depend on gfortran for a static library
 
 # Website
  - add wig package uri to details
