@@ -28,6 +28,7 @@
  - test protobuf wig
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
  - OpenBLAS should depend on gfortran for a static library
+ - wigwam should have a command that shows its defined env directories
 
 # Website
  - add wig package uri to details
