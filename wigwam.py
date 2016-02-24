@@ -491,9 +491,6 @@ class WigConfig:
 
 		flatten = lambda xs: list(itertools.chain(*xs))
 		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs.values()))
-		for wig in self.wigs.values():
-			if None in wig.lib_dirs:
-				print wig.name
 		self.lib_dirs = P.prefix_lib_dirs + flatten(map(lambda wig: wig.lib_dirs, self.wigs.values()))
 		self.include_dirs = P.prefix_include_dirs + flatten(map(lambda wig: wig.include_dirs, self.wigs.values()))
 		self.python_dirs = P.prefix_python_dirs + flatten(map(lambda wig: wig.python_dirs, self.wigs.values()))
