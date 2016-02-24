@@ -769,9 +769,16 @@ def search(wig_name, output_json):
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
-def enter(path):
+def enter(path, dry):
 	if path:
 		print P.activate_sh
+	elif dry:
+		if os.path.exists(P.activate_sh):
+			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
+			print ''
+			print open(P.activate_sh).read()
+		else:
+			print 'The activate shell script doesn''t exist yet.'
 	else:
 		cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.activate_sh
 		subprocess.call(['bash', '-c', cmd])
@@ -979,6 +986,7 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('in')
 	cmd.set_defaults(func = enter)
 	cmd.add_argument('--path', action = 'store_true')
+	cmd.add_argument('--dry', action = 'store_true')
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
