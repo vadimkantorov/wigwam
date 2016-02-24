@@ -776,7 +776,8 @@ def enter(path, dry):
 		if os.path.exists(P.activate_sh):
 			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
 			print ''
-			print open(P.activate_sh).read()
+			with open(P.activate_sh, 'r') as f:
+				print f.read()
 		else:
 			print 'The activate shell script doesn''t exist yet.'
 	else:
