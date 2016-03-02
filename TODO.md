@@ -29,6 +29,7 @@
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
  - OpenBLAS should depend on gfortran for a static library
  - wigwam should have a command that shows its defined env directories
+ - add a verbose mode that prints executed bash script
 
 # Website
  - add wig package uri to details
