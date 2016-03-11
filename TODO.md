@@ -8,6 +8,7 @@
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
 
 # wigwam build
+ - CMAKE_PREFIX_PATH in wigwam_activate.sh
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
@@ -19,7 +20,6 @@
 - a way to provision a package/feature from another package feature trigger
 - build_dependencies, no_shared
 - checking for other wigs features
-- support $RELEASE_VERSION$ in working_directory
 
 # Other
  - gentle terminal reset on CTRL-C. Possible at all? Related to Linux kill signal interception
