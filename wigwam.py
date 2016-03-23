@@ -766,10 +766,8 @@ def search(wig_name, output_json):
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
-def enter(path, dry):
-	if path:
-		print P.activate_sh
-	elif dry:
+def enter(dry):
+	if dry:
 		if os.path.exists(P.activate_sh):
 			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
 			print ''
@@ -973,6 +971,7 @@ if __name__ == '__main__':
 	sys.excepthook = unhandled_exception_hook
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument('--root')
 	parser.add_argument('--repo', action = 'append', default = [])
 	parser.add_argument('--global', action = 'store_true')
 	subparsers = parser.add_subparsers()
@@ -983,7 +982,6 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('in')
 	cmd.set_defaults(func = enter)
-	cmd.add_argument('--path', action = 'store_true')
 	cmd.add_argument('--dry', action = 'store_true')
 	
 	cmd = subparsers.add_parser('status')
@@ -1022,8 +1020,10 @@ if __name__ == '__main__':
 	cmd.add_argument('--dangerous', action = 'store_true', required = True)
 
 	args = vars(parser.parse_args())
-	use_global, extra_repos = args.pop('global'), args.pop('repo')
-	P.init(root = os.path.abspath(P.wigwamdir) if (os.path.exists(P.wigwamdir) and not use_global) else os.path.expanduser('~/' + P.wigwamdir), extra_repos = extra_repos)
-	
 	cmd = args.pop('func')
+	use_global, extra_repos = args.pop('global'), args.pop('repo')
+	local_root_dir = os.path.abspath(args.root or '.')
+	global_root_dir = os.path.expanduser('~')
+	P.init(root = os.path.join(local_root_dir if ((os.path.exists(os.path.join(local_root_dir, P.wigwamdir)) or cmd == init) and not use_global) else global_root_dr, P.wigwamdir), extra_repos = extra_repos)
+	
 	cmd(**args)

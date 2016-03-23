@@ -2,19 +2,7 @@
 A humane dependency fetcher and builder for scientific projects, written in Python.
 
 # Installation
-**Prerequisites:** bash, Python 2.7, curl/wget installed and discoverable.
-
-Append to your ```~/.bashrc``` the alias:
-
-```alias wigwam='python <($([ -z "$(which curl)" ] && echo "wget -qO -" || echo "curl -s") https://raw.githubusercontent.com/vadimkantorov/wigwam/master/wigwam.py) --repo https://github.com/vadimkantorov/wigwam/tree/master/wigs'```
-
-Test wigwam by installing Torch with Facebook extensions (requires CUDA and CUDNN):
-
-```wigwam install torch fbtorch -DPATH_TO_CUDNN="/home/kantorov/cudnn-6.5-linux-x64-v2" -DPATH_TO_NVCC="/usr/local/cuda-6.5/bin/nvcc"```
-
-or by installing Caffe:
-
-```wigwam install caffe -DPATH_TO_CUDNN="/home/kantorov/cudnn-6.5-linux-x64-v2" -DPATH_TO_NVCC="/usr/local/cuda-6.5/bin/nvcc"```
+For installation instructions please check http://wigwam.in.
 
 # Commands
  - ```wigwam init``` - initializes an empty ```Wigwamfile```, an empty ```.wigwam``` directory structure in the current directory
