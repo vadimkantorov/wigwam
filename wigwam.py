@@ -1022,7 +1022,7 @@ if __name__ == '__main__':
 	args = vars(parser.parse_args())
 	cmd = args.pop('func')
 	use_global, extra_repos = args.pop('global'), args.pop('repo')
-	local_root_dir = os.path.abspath(args.root or '.')
+	local_root_dir = os.path.abspath(args.pop('root') or '.')
 	global_root_dir = os.path.expanduser('~')
 	P.init(root = os.path.join(local_root_dir if ((os.path.exists(os.path.join(local_root_dir, P.wigwamdir)) or cmd == init) and not use_global) else global_root_dr, P.wigwamdir), extra_repos = extra_repos)
 	
