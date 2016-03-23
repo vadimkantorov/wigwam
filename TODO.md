@@ -3,10 +3,6 @@
  - change way of specifyinng version and features, so that quotes are note needed
  - Check wigwam install manen-rp --reinstall
 
-# wigwam init
- - should create .wigwam in current directory
- - --root argument to all wigwam commands
-
 # wigwam upgrade
  - implement "wigwam upgrade package_name" and "wigwam upgrade" (script to be saved in upgrade.generated.sh)
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
