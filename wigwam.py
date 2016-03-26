@@ -17,7 +17,11 @@ class P:
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
 	wigwamdir = '.wigwam'
 	userwigdir = 'wigs'
-	python_prefix_schemes = [('python/PREFIXSCHEME', 'lib/python2.7/site-packages', 'bin', 'include/python2.7'), ('python/HOMESCHEME', 'lib/python', 'bin', 'include/python'), ('python/USERSCHEME', 'lib/python2.7/site-packages', 'bin', 'include/python2.7')] # https://docs.python.org/2/install/
+	python_prefix_schemes = [
+		('python/PREFIXSCHEME', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor)),
+		('python/HOMESCHEME', 'lib/python', 'bin', 'include/python'),
+		('python/USERSCHEME', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
+	] # https://docs.python.org/2/install/
 
 	@staticmethod
 	def init(root, extra_repos = []):
@@ -691,7 +695,7 @@ def status(verbose):
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][W.FORMATTED_VERSION] if wig_name in traces_dic else ''
 	
-	fmt = '%9s\t%30s\t%10s\t' + {True: '%s', False: '%.0s'}[verbose]
+	fmt = '%9s\t%-20s\t%-10s\t' + {True: '%s', False: '%.0s'}[verbose]
 
 	print fmt % ('INSTALLED', 'WIG_NAME', 'VERSION', 'URI')
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
@@ -700,7 +704,7 @@ def status(verbose):
 		is_installed = wig_name in installed
 		is_conflicted = requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
-		uri = '' if is_conflicted else installed[wig_name][W.URI]
+		uri = '' if is_conflicted else (installed[wig_name][W.URI] if W.URI in installed[wig_name] else 'N/A')
 		print fmt % ('*' if is_installed else '', wig_name, version, uri)
 
 def clean():
@@ -759,7 +763,7 @@ def search(wig_name, output_json):
 	wigs = map(w, sorted(set(wig_names)))
 
 	if not output_json:
-		fmt = '%30s\t%s'
+		fmt = '%-20s\t%-10s\t%s'
 		print fmt % ('WIG_NAME', 'VERSION', 'DEPENDENCIES')
 		for wig in wigs:
 			print fmt % (wig.name, wig.trace()[W.FORMATTED_VERSION], ', '.join(wig.dependencies))
