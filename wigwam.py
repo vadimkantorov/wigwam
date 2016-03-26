@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import json
+import pipes
 import shutil
 import inspect
 import urllib2
@@ -40,6 +41,7 @@ class P:
 		P.activate_m = p('wigwam_activate.m')
 		P.build_script = p('build.generated.sh')
 		P.install_script = p('install.generated.sh')
+		P.upgrade_script = p('upgrade.generated.sh')
 		P.wigwamfile = p('../Wigwamfile')
 		P.wigwamfile_installed = p('Wigwamfile.installed')
 		P.wigwamfile_old = p('Wigwamfile.old')
@@ -628,7 +630,7 @@ def install(wig_strings, dry, config, reinstall, only, dangerous):
 	assert (not only) or (only and dangerous)
 	
 	old = DictConfig.read(P.wigwamfile)
-	end = old.patch({ W.CONFIG : dict(map(lambda x: x.split('='), config)) })
+	end = old.patch({W.CONFIG : dict(map(lambda x: x.split('='), config))})
 	
 	wig_names = []
 	for wig_string in wig_strings:
@@ -641,6 +643,31 @@ def install(wig_strings, dry, config, reinstall, only, dangerous):
 
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only)
+
+def upgrade(wig_names, dry, only, dangerous):
+	init()
+
+	assert (not only) or (only and dangerous)
+
+	old = DictConfig.read(P.wigwamfile)
+	end = old.clone()
+
+	if not wig_names:
+		wig_names = filter(lambda x: x != W.CONFIG, old.keys())
+
+	for wig_name in wig_names:
+		if wig_name not in old:
+			print 'Package [%s] not installed or requested. Cannot upgrade, call install first.'
+			return
+
+		dict_config = WigConfig.find_and_construct_wig(wig_name).default_dict_config()
+		if dict_config[W.SOURCES] != old[wig_name][W.SOURCES]:
+			print 'Going to upgrade package [%s]: %s -> %s' % (wig_name, old[wig_name][W.SOURCES], dict_config[W.SOURCES])
+			end.patch({wig_name : {W.SOURCES : dict_config[W.SOURCES]}})
+
+	end.save(P.wigwamfile)
+	build(dry = dry, old = old, script_path = P.upgrade_script, seeds = wig_names, install_only_seeds = only)
+
 
 def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False):
 	init()
@@ -693,7 +720,6 @@ def status(verbose):
 
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
-	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][W.FORMATTED_VERSION] if wig_name in traces_dic else ''
 	
 	fmt = '%9s\t%-20s\t%-10s\t' + {True: '%s', False: '%.0s'}[verbose]
 
@@ -770,7 +796,7 @@ def search(wig_name, output_json):
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
-def enter(dry):
+def enter(dry, verbose):
 	if dry:
 		if os.path.exists(P.activate_sh):
 			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
@@ -780,8 +806,12 @@ def enter(dry):
 		else:
 			print 'The activate shell script doesn''t exist yet.'
 	else:
-		cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % P.activate_sh
-		subprocess.call(['bash', '-c', cmd])
+		cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-x' if verbose else '', P.activate_sh)
+		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
+
+def run(cmds, verbose):
+	cmd = '''bash -ci%s %s --rcfile <(cat "$HOME/.bashrc"; cat "%s")''' % ('x' if verbose else '', pipes.quote(' '.join(cmds)), P.activate_sh)
+	subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
 	for script_path in P.generated_installation_scripts:
@@ -987,6 +1017,7 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('in')
 	cmd.set_defaults(func = enter)
 	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
@@ -1017,6 +1048,18 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = search)
 	cmd.add_argument('wig_name', default = None, nargs = '?')
 	cmd.add_argument('--json', action = 'store_true', dest = 'output_json')
+
+	cmd = subparsers.add_parser('run')
+	cmd.set_defaults(func = run)
+	cmd.add_argument('--verbose', action = 'store_true')
+	cmd.add_argument('cmds', nargs = '+')
+	
+	cmd = subparsers.add_parser('upgrade')
+	cmd.set_defaults(func = upgrade)
+	cmd.add_argument('wig_names', nargs = '*')
+	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--only', action = 'store_true')
+	cmd.add_argument('--dangerous', action = 'store_true')
 
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
