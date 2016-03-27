@@ -720,7 +720,8 @@ def status(verbose):
 
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
-	
+
+	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][W.FORMATTED_VERSION] if wig_name in traces_dic else ''	
 	fmt = '%9s\t%-20s\t%-10s\t' + {True: '%s', False: '%.0s'}[verbose]
 
 	print fmt % ('INSTALLED', 'WIG_NAME', 'VERSION', 'URI')
