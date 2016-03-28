@@ -102,7 +102,7 @@
   				<h2>Installing</h2>
   				<p><strong>Prerequisites:</strong>&nbsp;check that your system has Python 2.7, bash, wget/curl.</p>
   				<p>Append the following alias to your <strong>~/.bashrc</strong> file (and don't forget to reload it):</p>
-  				<pre>alias wigwam='python <($([ -z "$(which curl)" ] &amp;&amp; echo "wget -qO -" || echo "curl -s") https://raw.githubusercontent.com/vadimkantorov/wigwam/master/wigwam.py) --repo https://github.com/vadimkantorov/wigwam/tree/master/wigs'</pre>
+  				<pre>alias wigwam='python <($([ -z "$(which curl)" ] &amp;&amp; echo "wget -nv -O -" || echo "curl -sS") https://raw.githubusercontent.com/vadimkantorov/wigwam/master/wigwam.py) --repo https://github.com/vadimkantorov/wigwam/tree/master/wigs'</pre>
   				<p>This way will always run you on the latest version of wigwam and package scripts. Yet it can be unstable at times, for a more robust installation method refer to the <a href="https://github.com/vadimkantorov/wigwam">documentation</a>.</p>
   			</div>
 		</div>
