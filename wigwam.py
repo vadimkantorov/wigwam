@@ -1068,10 +1068,9 @@ if __name__ == '__main__':
 	cmd.add_argument('--dangerous', action = 'store_true', required = True)
 
 	args = vars(parser.parse_args())
-	cmd = args.pop('func')
-	use_global, extra_repos = args.pop('global'), args.pop('repo')
-	local_root_dir = os.path.abspath(args.pop('root') or '.')
-	global_root_dir = os.path.expanduser('~')
-	P.init(root = os.path.join(local_root_dir if ((os.path.exists(os.path.join(local_root_dir, P.wigwamdir)) or cmd == init) and not use_global) else global_root_dir, P.wigwamdir), extra_repos = extra_repos)
+	cmd, use_global, extra_repos, arg_root = args.pop('func'), args.pop('global'), args.pop('repo'), args.pop('root')
+        local_root_dir = os.path.abspath(arg_root or '.')
+        global_root_dir = os.path.expanduser('~')
+        P.init(root = os.path.join(local_root_dir if ((os.path.exists(os.path.join(local_root_dir, P.wigwamdir)) or cmd == init or arg_root != None) and not use_global) else global_root_dir, P.wigwamdir), extra_repos = extra_repos)
 	
 	cmd(**args)
