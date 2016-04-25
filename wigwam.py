@@ -353,7 +353,7 @@ class Wig:
 	def require(self, wig_name = None, features = []):
 		if wig_name:
 			deps = self.optional_dependencies + [x[0] if isinstance(x, tuple) else x for x in self.dependencies]
-			assert wig_name in deps
+			assert wig_name in deps, 'Dependency [%s] is not found in wig.dependencies [%s] or in wig.optional_dependencies [%s]' % (wig_name, self.dependencies, self.optional_dependencies)
 			if wig_name not in self.depends_on:
 				self.depends_on.append(wig_name)
 
@@ -661,8 +661,8 @@ def upgrade(wig_names, dry, only, dangerous):
 			return
 
 		dict_config = WigConfig.find_and_construct_wig(wig_name).default_dict_config()
-		if dict_config[W.SOURCES] != old[wig_name][W.SOURCES]:
-			print 'Going to upgrade package [%s]: %s -> %s' % (wig_name, old[wig_name][W.SOURCES], dict_config[W.SOURCES])
+		if dict_config.get(W.SOURCES, None) != old[wig_name].get(W.SOURCES, None):
+			print 'Going to upgrade package [%s]: %s -> %s' % (wig_name, old[wig_name].get(W.SOURCES, None), dict_config.get(W.SOURCES, None))
 			end.patch({wig_name : {W.SOURCES : dict_config[W.SOURCES]}})
 
 	end.save(P.wigwamfile)

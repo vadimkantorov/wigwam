@@ -5,6 +5,7 @@
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
+ - right now upgrade does not lead to reinstalling of all dependent libraries, but it should
 
 # wigwam build
  - CMAKE_PREFIX_PATH in wigwam_activate.sh
@@ -16,10 +17,11 @@
  - wigwam_activate.lua
 
 # Wig API
-- a way to provision a package/feature from another package feature trigger
-- build_dependencies, no_shared
-- checking for other wigs features
-- support adding exports to wigwam_activate.sh
+ - a way to provision a package/feature from another package feature trigger
+ - build_dependencies, no_shared, skip_stages
+ - wig.SOURCES, URI should be set once
+ - checking for other wigs features
+ - support adding exports to wigwam_activate.sh
 
 # Other
  - gentle terminal reset on CTRL-C. Possible at all? Related to Linux kill signal interception

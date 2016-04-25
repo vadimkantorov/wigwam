@@ -1,10 +1,17 @@
 class opencv(CmakeWig):
-	tarball_uri = 'https://github.com/Itseez/opencv/archive/$RELEASE_VERSION$.tar.gz'
-	last_release_version ='v2.4.11'
+	tarball_uri = 'https://github.com/itseez/opencv/archive/$RELEASE_VERSION$.tar.gz'
+	last_release_version ='v3.1.0'
 	dependencies = ['pkg-config']
-	optional_dependencies = ['ffmpeg']
-	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg']
-	default_features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg']
+	optional_dependencies = ['ffmpeg', 'opencv_contrib']
+	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg', 'contrib', 'ipp']
+	default_features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg', '-ipp']
+
+	def switch_ipp(self, on):
+		self.cmake_flags += ['-DWITH_IPP=%s' % S.ONOFF(on)]
+
+	def switch_contrib_on(self):
+		self.require('opencv_contrib')
+		self.cmake_flags += ['-DOPENCV_EXTRA_MODULES_PATH="%s"' % os.path.join(self.paths.src_dir, '../opencv_contrib/modules')]
 
 	def switch_ffmpeg_on(self):
 		self.require('ffmpeg')
