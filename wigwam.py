@@ -697,7 +697,7 @@ def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall
 			print '0 packages to be reconfigured. Quitting.'
 		else:
 			print 'Running installation script now:'
-			return_code = subprocess.call(['bash', script_path] if not verbose else ['bash', '-x', script_path])
+			return_code = subprocess.call(['bash', script_path] if not verbose else ['bash', '-xv', script_path])
 			if return_code == 0:
 				print ''
 				print 'ALL OK. KTHXBAI!'
