@@ -624,7 +624,7 @@ def lint(old = None):
 
 	return end
 
-def install(wig_strings, dry, config, reinstall, only, dangerous):
+def install(wig_strings, dry, config, reinstall, only, dangerous, verbose):
 	init()
 
 	assert (not only) or (only and dangerous)
@@ -642,7 +642,7 @@ def install(wig_strings, dry, config, reinstall, only, dangerous):
 		wig_names.append(wig_name)
 
 	end.save(P.wigwamfile)
-	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only)
+	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
 def upgrade(wig_names, dry, only, dangerous):
 	init()
@@ -1032,6 +1032,7 @@ if __name__ == '__main__':
 	cmd.add_argument('--reinstall', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
 	cmd.add_argument('--dangerous', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
 	
 	cmd = subparsers.add_parser('build')
 	cmd.set_defaults(func = build)
