@@ -807,7 +807,7 @@ def enter(dry, verbose):
 		else:
 			print 'The activate shell script doesn''t exist yet.'
 	else:
-		cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-x' if verbose else '', P.activate_sh)
+		cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh)
 		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 
 def run(cmds, verbose):
