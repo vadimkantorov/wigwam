@@ -669,7 +669,7 @@ def upgrade(wig_names, dry, only, dangerous):
 	build(dry = dry, old = old, script_path = P.upgrade_script, seeds = wig_names, install_only_seeds = only)
 
 
-def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False):
+def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
 	init()
 
 	if lint(old = old) == None:
@@ -697,7 +697,7 @@ def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall
 			print '0 packages to be reconfigured. Quitting.'
 		else:
 			print 'Running installation script now:'
-			return_code = subprocess.call(['bash', script_path])
+			return_code = subprocess.call(['bash', script_path] if not verbose else ['bash', '-x', script_path])
 			if return_code == 0:
 				print ''
 				print 'ALL OK. KTHXBAI!'
@@ -1036,6 +1036,7 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('build')
 	cmd.set_defaults(func = build)
 	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
 
 	cmd = subparsers.add_parser('log')
 	cmd.set_defaults(func = log)
