@@ -1,6 +1,6 @@
 class caffe(Wig):
 	git_uri = 'https://github.com/BVLC/caffe'
-	config_acces = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO', 'PATH_TO_MATLAB']
+	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO', 'PATH_TO_MATLAB']
 	dependencies = ['boost', 'protobuf', 'glog', 'gflags', 'hdf5', 'snappy']
 	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv']
 	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv', 'matlab']
