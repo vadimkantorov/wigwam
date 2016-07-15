@@ -10,10 +10,10 @@ class caffe(Wig):
 		self.skip('make parallel')
 		self.config_fixes = ''
 		
-	def add_config_fix(var_name, var_value):
+	def add_config_fix(self, var_name, var_value):
 		self.config_fixes += '''| sed 's$# %s :=$%s := %s# %s :=$' ''' % (var_name, var_name, var_value, var_name)
 
-	def add_config_fix_dirs(var_name, var_prepend):
+	def add_config_fix_dirs(self, var_name, var_prepend):
 		self.config_fixes += '''| sed 's$%s :=$%s := %s $' ''' % (var_name, var_name, var_prepend)
 
 	def switch_openblas_on(self):
