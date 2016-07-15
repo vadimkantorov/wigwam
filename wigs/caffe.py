@@ -46,7 +46,7 @@ class caffe(Wig):
 		
 	def switch_cuda_on(self):
 		self.lib_dirs += [os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '../lib64')]
-		self.add_config_fix('CUDA_DIR', os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..')
+		self.add_config_fix('CUDA_DIR', os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..'))
 
 	def switch_matlab_on(self):
 		self.after_make += [S.make(self.make_flags + ['matcaffe'])]
