@@ -39,6 +39,7 @@ class caffe(Wig):
 
 	def switch_cudnn_on(self):
 		self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
+		self.include_dirs += [os.path.join(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')), '../include')]
 		self.config_fixes += '''| sed 's$# USE_CUDNN$USE_CUDNN := 1# USE_CUDNN$' '''
 		
 	def switch_cuda_on(self):
