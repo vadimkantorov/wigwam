@@ -19,16 +19,19 @@ class caffe(Wig):
 		self.config_fixes += '''| sed 's$# BLAS_LIB := /path/to/your/blas$BLAS_LIB := '$PREFIX'/lib# BLAS_LIB := /path/to/your/blas$' '''
 		
 	def switch_opencv(self, on):
-		self.require('opencv')
+		if on:
+			self.require('opencv')
+			self.config_fixes += '''| sed 's$# OPENCV_VERSION$OPENCV_VERSION := 3# OPENCV_VERSION$' '''
 		self.config_fixes += '''| sed 's$# USE_OPENCV$USE_OPENCV := %d# USE_OPENCV$' ''' % (1 if on else 0)
-		self.config_fixes += '''| sed 's$# OPENCV_VERSION$OPENCV_VERSION := 3# OPENCV_VERSION$' '''
 		
 	def switch_lmdb(self, on):
-		self.require('lmdb')
+		if on:
+			self.require('lmdb')
 		self.config_fixes += '''| sed 's$# USE_LMDB$USE_LMDB := %d# USE_LMDB$' ''' % (1 if on else 0)
 		
 	def switch_leveldb(self, on):
-		self.require('leveldb')
+		if on:
+			self.require('leveldb')
 		self.config_fixes += '''| sed 's$# USE_LEVELDB$USE_LEVELDB := %d# USE_LEVELDB$' ''' % (1 if on else 0)
 
 	def switch_cudnn_on(self):
