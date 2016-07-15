@@ -1,9 +1,9 @@
 class caffe(Wig):
 	git_uri = 'https://github.com/BVLC/caffe'
-	config_acces = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
+	config_acces = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO', 'PATH_TO_MATLAB']
 	dependencies = ['boost', 'protobuf', 'glog', 'gflags', 'hdf5', 'snappy']
 	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv']
-	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv']
+	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv', 'matlab']
 	default_features = ['+openblas', '+python', '-leveldb', '-lmdb', '+opencv']
 	
 	def setup(self):
@@ -11,6 +11,9 @@ class caffe(Wig):
 
 		self.python_dirs += [os.path.join(self.paths.src_dir, 'python')]
 		self.config_fixes = ''
+		
+	def switch_matlab_on(self):
+		self.config_fixes += '''| sed 's$# MATLAB_DIR$MATLAB_DIR := %s# MATLAB_DIR$' ''' % os.path.join(os.path.dirname(self.cfg('PATH_TO_MATLAB')), '..')
 
 	def switch_openblas_on(self):
 		self.require('openblas')
