@@ -21,7 +21,7 @@
  - a way to provision a package/feature from another package feature trigger
  - build_dependencies, no_shared, skip_stages
  - wig.SOURCES, URI should be set once
- - checking for other wigs features
+ - checking for other wigs features and version
  - support adding exports to wigwam_activate.sh
 
 # Other
