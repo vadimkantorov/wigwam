@@ -4,7 +4,7 @@ class caffe(Wig):
 	dependencies = ['boost', 'protobuf', 'glog', 'gflags', 'hdf5', 'snappy']
 	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv']
 	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv', 'matlab']
-	default_features = ['+openblas', '+python', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
+	default_features = ['+openblas', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
 	
 	def setup(self):
 		self.skip('make parallel')
