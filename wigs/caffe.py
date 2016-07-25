@@ -8,13 +8,13 @@ class caffe(Wig):
 	
 	def setup(self):
 		self.skip('make parallel')
-		self.config_fixes = ''
+		self.makefile_config_fixes = ''
 		
 	def set_makefile_config_var_commented(self, var_name, var_value):
-		self.config_fixes += '''| sed 's$# %s :=$%s := %s# %s :=$' ''' % (var_name, var_name, var_value, var_name)
+		self.makefile_config_fixes += '''| sed 's$# %s :=$%s := %s# %s :=$' ''' % (var_name, var_name, var_value, var_name)
 
 	def set_makefile_config_var_uncommented(self, var_name, var_prepend, comment_rest = False):
-		self.config_fixes += '''| sed 's$%s :=$%s := %s%s$' ''' % (var_name, var_name, var_prepend, '#' if comment_rest else '')
+		self.makefile_config_fixes += '''| sed 's$%s :=$%s := %s%s$' ''' % (var_name, var_name, var_prepend, '#' if comment_rest else '')
 
 	def switch_openblas_on(self):
 		self.require('openblas')
@@ -58,7 +58,7 @@ class caffe(Wig):
 		self.set_makefile_config_var_commented('WITH_PYTHON_LAYER', 1)
 
 	def gen_configure_snippet(self):
-		return ['cat Makefile.config.example %s > Makefile.config' % self.config_fixes]
+		return ['cat Makefile.config.example %s > Makefile.config' % self.makefile_config_fixes]
 
 	def gen_install_snippet(self):
 		return [S.ln('$(pwd)/build/lib/libcaffe.so', '$PREFIX/lib/libcaffe.so'), 
