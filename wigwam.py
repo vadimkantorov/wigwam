@@ -16,7 +16,8 @@ import multiprocessing
 
 class P:
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
-	wigwamdir = '.wigwam'
+	wigwamdirname = '.wigwam'
+	wigwamfilename = 'Wigwamfile'
 	userwigdir = 'wigs'
 	python_prefix_schemes = [
 		('python/PREFIXSCHEME', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor)),
@@ -25,8 +26,9 @@ class P:
 	] # https://docs.python.org/2/install/
 
 	@staticmethod
-	def init(root, extra_repos = []):
+	def init(root, wigwamfile, extra_repos):
 		P.root = root
+		P.wigwamfile = wigwamfile
 		p = lambda x: os.path.join(P.root, x)
 
 		P.src_tree = p('src')
@@ -42,9 +44,8 @@ class P:
 		P.build_script = p('build.generated.sh')
 		P.install_script = p('install.generated.sh')
 		P.upgrade_script = p('upgrade.generated.sh')
-		P.wigwamfile = p('../Wigwamfile')
-		P.wigwamfile_installed = p('Wigwamfile.installed')
-		P.wigwamfile_old = p('Wigwamfile.old')
+		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
+		P.wigwamfile_old = p(P.wigwamfilename + '.old')
 
 		P.artifact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root]
 
@@ -1071,8 +1072,15 @@ if __name__ == '__main__':
 
 	args = vars(parser.parse_args())
 	cmd, use_global, extra_repos, arg_root = args.pop('func'), args.pop('global'), args.pop('repo'), args.pop('root')
-        local_root_dir = os.path.abspath(arg_root or '.')
-        global_root_dir = os.path.expanduser('~')
-        P.init(root = os.path.join(local_root_dir if ((os.path.exists(os.path.join(local_root_dir, P.wigwamdir)) or cmd == init or arg_root != None) and not use_global) else global_root_dir, P.wigwamdir), extra_repos = extra_repos)
+
+	local_root_dir = os.path.abspath(arg_root or '.')
+	global_root_dir = os.path.expanduser('~')
+	use_local = lambda local_file_name, local_cond: ((os.path.exists(os.path.join(local_root_dir, local_file_name)) or cmd == init or local_cond)) and not use_global
+	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root != None) else global_root_dir
+	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
+
+	print(wigwamfile_dir)
+
+	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(wigwamfile_dir, P.wigwamfilename), extra_repos = extra_repos)
 	
 	cmd(**args)
