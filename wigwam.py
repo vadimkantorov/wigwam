@@ -1076,11 +1076,9 @@ if __name__ == '__main__':
 	local_root_dir = os.path.abspath(arg_root or '.')
 	global_root_dir = os.path.expanduser('~')
 	use_local = lambda local_file_name, local_cond: ((os.path.exists(os.path.join(local_root_dir, local_file_name)) or cmd == init or local_cond)) and not use_global
+	
 	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root != None) else global_root_dir
 	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
-
-	print(wigwamfile_dir)
-
 	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(wigwamfile_dir, P.wigwamfilename), extra_repos = extra_repos)
 	
 	cmd(**args)
