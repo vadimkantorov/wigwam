@@ -4,8 +4,8 @@ class torch(CmakeWig):
 	dependencies = ['openblas', 'readline', 'ncurses', 'sdl', 'imagemagick', 'magma']
 	optional_dependencies = ['gnuplot', 'fftw', 'sox']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
-	supported_features = ['qt', 'cuda', 'dsp', 'cudnn']
-	default_features = ['+dsp', '+cuda', '+qt', '+cudnn']
+	supported_features = ['qt', 'cuda', 'cudnn']
+	default_features = ['+cuda', '+qt', '+cudnn']
 
 	def luarocks_install(self, pkg):
 		wig = LuarocksWig(pkg)
@@ -37,10 +37,8 @@ class torch(CmakeWig):
 			'extra/nnx/nnx-0.1-1.rockspec',
 			'pkg/optim/optim-1.0.5-0.rockspec',
 			'extra/threads/rocks/threads-scm-1.rockspec',
-			'extra/sdl2/rocks/sdl2-scm-1.rockspec', 
 			'extra/argcheck/rocks/argcheck-scm-1.rockspec',
 			'pkg/image/image-1.1.alpha-0.rockspec',
-			'extra/graphicsmagick/graphicsmagick-1.scm-0.rockspec'
 		])
 	
 	def switch_qt_on(self):
@@ -64,12 +62,3 @@ class torch(CmakeWig):
 
 	def switch_cudnn_on(self):
 		self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
-
-	def switch_dsp_on(self):
-		self.require('fftw')
-		self.require('sox')
-		self.after_install += map(self.luarocks_make, [
-			'extra/audio/audio-0.1-0.rockspec',
-			'extra/fftw3/rocks/fftw3-scm-1.rockspec',
-			'extra/signal/rocks/signal-scm-1.rockspec'
-		])
