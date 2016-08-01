@@ -765,7 +765,7 @@ def log(wig_name, fetch = False, configure = False, make = False, install = Fals
 	arg_stages = locals()
 	stages = filter(lambda stage: arg_stages[stage] == True, Wig.all_installation_stages) or Wig.all_installation_stages
 	paths = ['"%s.txt"' % os.path.join(P.log_base(wig_name), stage) for stage in stages]
-	os.system('cat %s | less' % ' '.join(paths))
+	subprocess.call('cat %s | less' % ' '.join(paths), shell = True)
 
 def search(wig_name, output_json):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
