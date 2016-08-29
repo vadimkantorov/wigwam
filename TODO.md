@@ -33,6 +33,7 @@
  - OpenBLAS should depend on gfortran for a static library
  - wigwam should have a command that shows its defined env directories
  - make torch depend on libjpeg8
+ - remove v* prefix from versions
 
 # Website
  - add wig package uri to details
