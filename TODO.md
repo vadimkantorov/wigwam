@@ -2,6 +2,7 @@
  - Parsing Wigwamfile.installed should not break if features/config values are not there. Parsing should be light-weight
  - change way of specifyinng version and features, so that quotes are note needed
  - Check wigwam install manen-rp/torch --reinstall
+ - Install lua/pip* wigs at last (because we don't know dependencies for them)
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
