@@ -395,14 +395,10 @@ class LuarocksWig(Wig):
 		Wig.__init__(self, name)
 		if rockspec_path != None:
 			self.rockspec_path = rockspec_path
-		self.skip('configure', 'install')
+		self.skip('fetch', 'configure', 'make')
 	
-	def gen_make_snippet(self):
-		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s make %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else []
-
 	def gen_install_snippet(self):
-		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s install %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name)] if not self.rockspec_path else []
-
+		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s make %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s install %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name)]
 
 class DebWig(Wig):
 	APT_GET_OUTPUT_CACHE = {}
