@@ -177,7 +177,7 @@ class SourceFetcher:
 	def __init__(self):
 		self.clues = {}
 
-	def configure_git(self, wig, sources):
+	def make_gen_snippet_git(self, wig, sources):
 		self.clues.update({W.URI : wig.git_uri, W.GIT_INIT_SUBMODULES : wig.git_init_submodules if wig.git_init_submodules != None else False})
 		if wig.git_branch:
 			self.clues[W.GIT_BRANCH] = wig.git_branch
@@ -190,18 +190,18 @@ class SourceFetcher:
 		if len(splitted) > 1:
 			self.clues[W.GIT_BRANCH] = splitted[1].strip()
 
-		self.gen_snippet = lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_git(self.clues[W.URI], target_dir, init_submodules = self.clues[W.GIT_INIT_SUBMODULES], tag = self.clues.get(W.GIT_COMMIT) or self.clues.get(W.GIT_BRANCH))
+		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_git(self.clues[W.URI], target_dir, init_submodules = self.clues[W.GIT_INIT_SUBMODULES], tag = self.clues.get(W.GIT_COMMIT) or self.clues.get(W.GIT_BRANCH))
 
-	def configure_tarball(self, wig, sources):
+	def make_gen_snippet_tarball(self, wig, sources):
 		version = sources.strip() or wig.last_release_version or wig.find_last_release_version()
 		self.clues.update({W.URI : wig.compute_release_url(version), W.VERSION : version, W.TAR_STRIP_COMPONENTS : wig.tar_strip_components if wig.tar_strip_components != None else 1})
-		self.gen_snippet = lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_tarball(self.clues[W.URI], target_dir, strip_components = self.clues[W.TAR_STRIP_COMPONENTS])
+		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_tarball(self.clues[W.URI], target_dir, strip_components = self.clues[W.TAR_STRIP_COMPONENTS])
 
 	def configure(self, wig, sources):
 		if sources.startswith('git'):
-			self.configure_git(wig, sources[len('git'):])
+			self.gen_snippet = self.make_gen_snippet_git(wig, sources[len('git'):])
 		elif sources.startswith('tarball'):
-			self.configure_tarball(wig, sources[len('tarball'):])
+			self.gen_snippet = self.make_gen_snippet_tarball(wig, sources[len('tarball'):])
 		else:
 			self.gen_snippet = lambda target_dir: None
 
@@ -388,6 +388,7 @@ class AutogenWig(Wig):
 
 class LuarocksWig(Wig):
 	LUAROCKS_PATH = '$PREFIX/bin/luarocks'
+	sources = 'luarocks'
 	rockspec_path = None
 	
 	def __init__(self, name, rockspec_path = None):
