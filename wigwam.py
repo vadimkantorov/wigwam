@@ -713,8 +713,12 @@ def remove(wig_names, dangerous):
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
 
-def status(verbose):
+def status(verbose, root):
 	init()
+	
+	if root:
+		print P.root
+		return
 
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
@@ -1020,6 +1024,7 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
+	cmd.add_argument('--root', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 
 	cmd = subparsers.add_parser('install')
