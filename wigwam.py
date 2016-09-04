@@ -713,10 +713,10 @@ def remove(wig_names, dangerous):
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
 
-def status(verbose, root):
+def status(verbose, path):
 	init()
 	
-	if root:
+	if path:
 		print P.root
 		return
 
@@ -1024,7 +1024,7 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
-	cmd.add_argument('--root', action = 'store_true')
+	cmd.add_argument('--path', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 
 	cmd = subparsers.add_parser('install')
