@@ -9,7 +9,7 @@ class torch(CmakeWig):
 	
 	@staticmethod
 	def luarocks_install(pkg_name):
-		return '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()))
+		return '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet())
 	
 	@staticmethod
 	def luarocks_make(rockspec_path):
@@ -17,7 +17,7 @@ class torch(CmakeWig):
 		pkg_name = splitted[1]
 		working_directory = os.path.join(*splitted[:2])
 		rockspec_path = os.path.join(*splitted[2:])
-		return '( cd "%s"; %s )' % (working_directory, '; '.join(LuarocksWig(pkg_name, rockspec_path).gen_install_snippet())))
+		return '( cd "%s"; %s )' % (working_directory, '; '.join(LuarocksWig(pkg_name, rockspec_path).gen_install_snippet()))
 
 	def setup(self):
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
