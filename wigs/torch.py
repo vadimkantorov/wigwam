@@ -25,6 +25,7 @@ class torch(CmakeWig):
 			'extra/lua-cjson/lua-cjson-2.1devel-1.rockspec',
 			
 			# Installing core Torch packages
+			'extra/luaffifb/luaffi-scm-1.rockspec',
 			'pkg/sundown/rocks/sundown-scm-1.rockspec',
 			'pkg/cwrap/rocks/cwrap-scm-1.rockspec',
 			'pkg/paths/rocks/paths-scm-1.rockspec',
