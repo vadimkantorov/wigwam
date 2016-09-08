@@ -7,8 +7,17 @@ class torch(CmakeWig):
 	supported_features = ['qt', 'cuda', 'cudnn']
 	default_features = ['+cuda', '+qt', '+cudnn']
 	
-	luarocks_install = staticmethod(lambda pkg_name: '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()))
-	luarocks_make = staticmethod(lambda rockspec_path: '( %s )' % '; '.join(LuarocksWig(rockspec_path.split('/')[1], rockspec_path).gen_install_snippet()))
+	@staticmethod
+	def luarocks_install(pkg_name):
+		return '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()))
+	
+	@staticmethod
+	def luarocks_make(rockspec_path):
+		splitted = rockspec_path.split('/')
+		pkg_name = splitted[1]
+		working_directory = os.path.join(*splitted[:2])
+		rockspec_path = os.path.join(*splitted[2:])
+		return '( cd "%s"; %s )' % (working_directory, '; '.join(LuarocksWig(pkg_name, rockspec_path).gen_install_snippet())))
 
 	def setup(self):
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
