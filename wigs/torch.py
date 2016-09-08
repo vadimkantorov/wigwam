@@ -6,13 +6,16 @@ class torch(CmakeWig):
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	supported_features = ['qt', 'cuda', 'cudnn']
 	default_features = ['+cuda', '+qt', '+cudnn']
+	
+	luarocks_install = staticmethod(lambda pkg_name: '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()))
+	luarocks_make = staticmethod(lambda rockspec_path: '( %s )' % '; '.join(LuarocksWig(rockspec_path.split('/')[1], rockspec_path).gen_install_snippet()))
 
 	def setup(self):
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
 		
 		self.after_install += [S.CD_PARENT]
-		self.after_install += map(lambda pkg_name: '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()), ['luafilesystem', 'penlight', 'lua-cjson'])
-		self.after_install += map(lambda rockspec_path: '( %s )' % '; '.join(LuarocksWig(rockspec_path.split('/')[1], rockspec_path).gen_install_snippet()), [
+		self.after_install += map(torch.luarocks_install, ['luafilesystem', 'penlight', 'lua-cjson'])
+		self.after_install += map(torch.luarocks_make, [
 			'pkg/sundown/rocks/sundown-scm-1.rockspec',
 			'pkg/cwrap/rocks/cwrap-scm-1.rockspec',
 			'pkg/paths/rocks/paths-scm-1.rockspec',
@@ -32,7 +35,7 @@ class torch(CmakeWig):
 	
 	def switch_qt_on(self):
 		self.require('gnuplot')
-		self.after_install += map(self.luarocks_make, [
+		self.after_install += map(torch.luarocks_make, [
 			'pkg/gnuplot/rocks/gnuplot-scm-1.rockspec',
 			'exe/qtlua/rocks/qtlua-scm-1.rockspec',
 			'pkg/qttorch/rocks/qttorch-scm-1.rockspec'
@@ -42,7 +45,7 @@ class torch(CmakeWig):
 		CUDA_BIN_PATH = os.path.dirname(self.cfg('PATH_TO_NVCC'))
 		self.lib_dirs += [os.path.join(CUDA_BIN_PATH, '../lib64')]
 		self.after_install += [S.export('CUDA_BIN_PATH', CUDA_BIN_PATH)]
-		self.after_install += map(self.luarocks_make, [
+		self.after_install += map(torch.luarocks_make, [
 			'extra/cutorch/rocks/cutorch-scm-1.rockspec',
 			'extra/cunn/rocks/cunn-scm-1.rockspec',
 			'extra/cunnx/rocks/cunnx-scm-1.rockspec',
