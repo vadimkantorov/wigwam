@@ -7,23 +7,12 @@ class torch(CmakeWig):
 	supported_features = ['qt', 'cuda', 'cudnn']
 	default_features = ['+cuda', '+qt', '+cudnn']
 
-	def luarocks_install(self, pkg):
-		wig = LuarocksWig(pkg)
-		wig.make_flags = self.make_flags
-		return '( %s )' % '; '.join(wig.gen_install_snippet())
-
-	def luarocks_make(self, path):
-		splitted = path.split('/')
-		wig = LuarocksWig(splitted[1], os.path.join(*splitted[2:]))
-		wig.make_flags = self.make_flags
-		return '( cd "%s"; %s )' % (os.path.join(*splitted[:2]), '; '.join(wig.gen_make_snippet()))
-
 	def setup(self):
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
 		
 		self.after_install += [S.CD_PARENT]
-		self.after_install += map(self.luarocks_install, ['luafilesystem', 'penlight', 'lua-cjson'])
-		self.after_install += map(self.luarocks_make, [
+		self.after_install += map(lambda pkg_name: '( %s )' % '; '.join(LuarocksWig(pkg_name).gen_install_snippet()), ['luafilesystem', 'penlight', 'lua-cjson'])
+		self.after_install += map(lambda rockspec_path: '( %s )' % '; '.join(LuarocksWig(rockspec_path.split('/')[1], rockspec_path).gen_install_snippet()), [
 			'pkg/sundown/rocks/sundown-scm-1.rockspec',
 			'pkg/cwrap/rocks/cwrap-scm-1.rockspec',
 			'pkg/paths/rocks/paths-scm-1.rockspec',
