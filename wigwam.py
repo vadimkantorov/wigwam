@@ -428,7 +428,7 @@ class DebWig(Wig):
 		return [P.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
 	
 	def gen_install_snippet(self):
-		return ['dpkg -x %s %s' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
+		return ['dpkg -x "%s" "%s"' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
 
 class PythonWig(Wig):
 	pass
