@@ -7,6 +7,7 @@
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
  - right now upgrade does not lead to reinstalling of all dependent libraries, but it should
+ - fail gracefully if a wig from Wigwamfile.installed has been removed
 
 # wigwam build
  - CMAKE_PREFIX_PATH in wigwam_activate.sh
