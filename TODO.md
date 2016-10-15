@@ -5,6 +5,7 @@
  - Install lua/pip* wigs at last (because we don't know dependencies for them)
  - Should not add features that do not exist, even in dry mode
  - Should check sources format
+ - Allow redefine git url for wigs in Wigwamfile (think caffe and clones)
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
