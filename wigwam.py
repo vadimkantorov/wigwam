@@ -993,6 +993,7 @@ def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
 	filename = os.path.basename(filename)
 	error = '%s: %s' % (exc_type.__name__, exc_value)
 
+	print ''
 	print 'Unhandled exception occured!'
 	print ''
 	print 'Please consider filing a bug report at %s' % P.bugreport_page
