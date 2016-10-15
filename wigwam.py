@@ -502,14 +502,9 @@ class WigConfig:
 
 	@staticmethod
 	def find_and_construct_wig(wig_name):
-		if wig_name.startswith('deb-'):
-			return DebWig(wig_name[len('deb-'):])
-
-		if wig_name.startswith('lua-'):
-			return LuarocksWig(wig_name[len('lua-'):])
-
-		if wig_name.startswith('pip-'):
-			return PipWig(wig_name[len('pip-'):])
+		shortcut = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
+		if shortcut:
+			return shortcut[0](wig_name)
 
 		find_class = lambda: {cls.__name__ : cls for cls in globals().values() if inspect.isclass(cls) and issubclass(cls, Wig) and cls != Wig}.get(wig_name.replace('-', '_'))
 		
