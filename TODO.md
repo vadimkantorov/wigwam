@@ -40,6 +40,7 @@
  - wigwam should have a command that shows its defined env directories
  - make torch depend on libjpeg8
  - remove v* prefix from versions
+ - py-lmdb wig
 
 # Website
  - add wig package uri to details
