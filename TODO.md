@@ -3,6 +3,7 @@
  - change way of specifyinng version and features, so that quotes are not needed
  - Check wigwam install manen-rp/torch --reinstall
  - Install lua/pip* wigs at last (because we don't know dependencies for them)
+ - Should not add features that do not exist, even in dry mode
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
