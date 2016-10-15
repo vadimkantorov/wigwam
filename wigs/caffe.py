@@ -2,7 +2,7 @@ class caffe(Wig):
 	git_uri = 'https://github.com/BVLC/caffe'
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO', 'PATH_TO_MATLAB']
 	dependencies = ['boost', 'protobuf', 'glog', 'gflags', 'hdf5', 'snappy']
-	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv']
+	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv', 'skimage']
 	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv', 'matlab']
 	default_features = ['+openblas', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
 	
@@ -53,6 +53,7 @@ class caffe(Wig):
 		self.set_makefile_config_var_commented('MATLAB_DIR', os.path.join(os.path.dirname(self.cfg('PATH_TO_MATLAB')), '..'))
 		
 	def switch_python_on(self):
+		self.require('skimage')
 		self.python_dirs += [os.path.join(self.paths.src_dir, 'python')]
 		self.after_make += [S.make(self.make_flags + ['pycaffe'])]
 		self.set_makefile_config_var_commented('WITH_PYTHON_LAYER', 1)
