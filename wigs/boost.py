@@ -8,7 +8,7 @@ class boost(Wig):
 	
 	def setup(self):
 		self.skip('make')
-		self.bootstrap_flags = ['--without_python']
+		self.bootstrap_flags = ['--without-libraries=python']
 		
 	def switch_python_on(self):
 		self.bootstrap_flags = []
