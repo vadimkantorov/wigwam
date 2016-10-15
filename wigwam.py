@@ -431,7 +431,15 @@ class DebWig(Wig):
 		return ['dpkg -x "%s" "%s"' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
 
 class PythonWig(Wig):
-	pass
+	def __init__(self, name):
+		Wig.__init__(self, name)
+		self.skip('make')
+
+	def gen_configure_snippet(self):
+		return []
+
+	def gen_install_snippet(self):
+		return [S.python_setup_install]
 
 class PipWig(Wig):
 	PIP_PATH = 'pip' # '$PREFIX/bin/pip'

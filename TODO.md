@@ -27,6 +27,7 @@
  - wig.SOURCES, URI should be set once
  - checking for other wigs features and version
  - support adding exports to wigwam_activate.sh
+ - support saving options, making them available to other packages if needed
 
 # Other
  - add wigwam path
