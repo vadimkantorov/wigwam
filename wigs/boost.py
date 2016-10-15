@@ -12,7 +12,8 @@ class boost(Wig):
 		self.bootstrap_flags = []
 		
 	def switch_python(self, on):
-		self.bootstrap_flags = [] if on else ['--without-libraries=python']
+		if not on:
+			self.bootstrap_flags += ['--without-libraries=python']
 
 	def gen_install_snippet(self):
 		return ['./bootstrap.sh ' + ' '.join(self.bootstrap_flags), './b2 %s install %s' % (' '.join(self.make_flags), S.PREFIX_CONFIGURE_FLAG)]	
