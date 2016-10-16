@@ -42,6 +42,7 @@
  - remove v* prefix from versions
  - py-lmdb wig
  - when adding symlinks to the library, also add symlink to the actual library
+ - symlink caffe's includes
 
 # Website
  - add wig package uri to details
