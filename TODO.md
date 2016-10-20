@@ -36,13 +36,16 @@
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
- - OpenBLAS should depend on gfortran for a static library
  - wigwam should have a command that shows its defined env directories
- - make torch depend on libjpeg8
  - remove v* prefix from versions
- - py-lmdb wig
  - when adding symlinks to the library, also add symlink to the actual library
+ 
+# wigs
+ - py-lmdb wig
  - symlink caffe's includes
+ - glib wig + ref from pkg-config
+ - OpenBLAS should depend on gfortran for a static library
+ - make torch depend on libjpeg8
 
 # Website
  - add wig package uri to details
