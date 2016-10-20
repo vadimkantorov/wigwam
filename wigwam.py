@@ -1085,6 +1085,6 @@ if __name__ == '__main__':
 	
 	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root != None) else global_root_dir
 	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
-	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(wigwamfile_dir, P.wigwamfilename), extra_repos = extra_repos)
+	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamfilename), extra_repos = extra_repos)
 	
 	cmd(**args)
