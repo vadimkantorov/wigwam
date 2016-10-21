@@ -31,7 +31,7 @@
 
 # Other
  - add wigwam path
- - gentle terminal reset on CTRL-C (reproduce by hitting CTRL-C during wig fetch). Possible at all? Related to Linux kill signal interception
+ - gentle terminal reset on CTRL-C (reproduce by hitting CTRL-C during wig fetch). Possible at all? Related to Linux kill signal interception. Q: how does trap on EXIT works if we do "exit 1" from SIGINT trap? read apparently fails there.
  - test on python 2.6, 2.7, 3.x
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
