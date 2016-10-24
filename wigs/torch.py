@@ -2,6 +2,7 @@ class torch(CmakeWig):
 	git_uri = 'https://github.com/torch/distro'
 	git_init_submodules = True
 	dependencies = ['openblas', 'readline', 'ncurses', 'gnuplot']
+	optional_dependencies = ['magma']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	supported_features = ['qt', 'cuda', 'cudnn']
 	default_features = ['+cuda', '+qt', '+cudnn']
@@ -55,6 +56,7 @@ class torch(CmakeWig):
 		])
 
 	def switch_cuda_on(self):
+		self.require('magma')
 		CUDA_BIN_PATH = os.path.dirname(self.cfg('PATH_TO_NVCC'))
 		self.lib_dirs += [os.path.join(CUDA_BIN_PATH, '../lib64')]
 		self.after_install += [S.export('CUDA_BIN_PATH', CUDA_BIN_PATH)]
