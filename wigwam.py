@@ -816,7 +816,7 @@ def enter(dry, verbose):
 		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 
 def run(cmds, verbose):
-	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s ''' % ('x' if verbose else '', P.activate_sh, pipes.quote(' '.join(cmds)))
+	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(cmds)))
 	subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
