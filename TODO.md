@@ -46,6 +46,7 @@
  - glib wig + ref from pkg-config
  - OpenBLAS should depend on gfortran for a static library
  - make torch depend on libjpeg8
+ - install git before doing find_last_git_commit
 
 # Website
  - add wig package uri to details
