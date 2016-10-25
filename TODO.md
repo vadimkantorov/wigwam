@@ -20,6 +20,9 @@
  - wigwam_activate.m: Should set the env vars + be called in S.matlab
  - wigwam_activate.py
  - wigwam_activate.lua
+ 
+# wigwam in
+For every directory on LIBRARY_PATH: make dummy sub-directory sym-linking $(gcc -print-multi-os-directory, often ../lib64) to itself
 
 # Wig API
  - a way to provision a package/feature from another package feature trigger
