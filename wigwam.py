@@ -715,14 +715,13 @@ def remove(wig_names, dangerous):
 		installed.pop(wig_name, None)
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
+	
+def path():
+	print os.path.dirname(P.root)
 
-def status(verbose, path):
+def status(verbose):
 	init()
 	
-	if path:
-		print P.root
-		return
-
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 
@@ -1028,7 +1027,6 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
-	cmd.add_argument('--path', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 
 	cmd = subparsers.add_parser('install')
@@ -1075,6 +1073,8 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = remove)
 	cmd.add_argument('wig_names', nargs = '+')
 	cmd.add_argument('--dangerous', action = 'store_true', required = True)
+	
+	subparsers.add_parser('path').set_defaults(func = path)
 
 	args = vars(parser.parse_args())
 	cmd, use_global, extra_repos, arg_root = args.pop('func'), args.pop('global'), args.pop('repo'), args.pop('root')
