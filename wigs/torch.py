@@ -1,7 +1,7 @@
 class torch(CmakeWig):
 	git_uri = 'https://github.com/torch/distro'
 	git_init_submodules = True
-	dependencies = ['openblas', 'readline', 'ncurses', 'gnuplot']
+	dependencies = ['openblas', 'readline', 'ncurses', 'gnuplot', 'libjpeg']
 	optional_dependencies = ['magma']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	supported_features = ['qt', 'cuda', 'cudnn']
