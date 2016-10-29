@@ -120,10 +120,6 @@ class S:
 	CD_PARENT = 'cd ..'
 	MAKEFLAGS = 'MAKEFLAGS'
 	
-	@staticmethod	
-	def rm_rf(*args):
-		return 'rm -rf %s' % ' '.join(['"%s"' % x for x in args])
-
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
 	make_jobs = staticmethod('-j{}'.format)
 	export = staticmethod('export {0}="{1}"'.format)
@@ -135,6 +131,8 @@ class S:
 	make_install = staticmethod(lambda flags: 'make install %s' % ' '.join(flags))
 	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON_PREFIXSCHEME
 	ln = staticmethod('ln -f -s "{}" "{}"'.format)
+	qq = staticmethod('"{0}"'.format)
+	rm_rf = staticmethod(lambda *args: 'rm -rf %s' % ' '.join(map(S.qq, args)))
 
 	matlab = staticmethod(lambda matlab_path, script_path: '''"%s" -nodesktop -nosplash -r "addpath('%s'); try, %s; catch exception, disp(exception); disp(exception.message); exit(1); end; exit(0)"''' % (matlab_path, os.path.dirname(script_path), os.path.splitext(os.path.basename(script_path))[0]))
 
