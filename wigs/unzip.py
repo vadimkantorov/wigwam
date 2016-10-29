@@ -4,4 +4,6 @@ class unzip(Wig):
   
 	def setup(self):
 		self.skip('configure')
-		self.make_flags += ['-f', 'unix/Makefile']
+		makefile_path = '"unix/Makefile"'
+		self.make_flags += ['-f', makefile_path, 'generic']
+		self.make_install_flags += [S.prefix_MAKE_INSTALL_FLAG, '-f', makefile_path]
