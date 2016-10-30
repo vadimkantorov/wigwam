@@ -5,5 +5,5 @@ class libedit(Wig):
 			
 	def setup(self):		
 		#self.configure_flags += ['--disable-shared']
-		self.before_configure += [S.export(S.CPATH, '$PREFIX/include/ncurses')]
-		#self.before_make += [S.export(S.CPATH, '$PREFIX/include/ncurses')]
+		self.before_configure += [S.export(S.CPATH, '$PREFIX/include/ncurses:$' + S.CPATH)]
+		self.before_make += [S.export(S.CPATH, '$PREFIX/include/ncurses:$' + S.CPATH)]
