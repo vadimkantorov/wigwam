@@ -1,6 +1,6 @@
 class ncurses(Wig):
 	tarball_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-$RELEASE_VERSION$.tar.gz'
-	last_release_version = 'v5.9'
+	last_release_version = 'v6.0'
 
 	def setup(self):
 		self.before_configure += [S.export(S.CFLAGS, '-fPIC')]
