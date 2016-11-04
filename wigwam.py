@@ -123,7 +123,7 @@ class S:
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
 	make_jobs = staticmethod('-j{}'.format)
 	export = staticmethod('export {0}="{1}"'.format)
-	export_prepend_path = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
+	export_prepend_paths = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
 	configure = staticmethod(lambda flags: './configure %s' % ' '.join(flags))
 	onoff = staticmethod({True : 'on', False : 'off'}.get)
 	ONOFF = staticmethod({True : 'ON', False : 'OFF'}.get)
