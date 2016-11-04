@@ -123,6 +123,7 @@ class S:
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
 	make_jobs = staticmethod('-j{}'.format)
 	export = staticmethod('export {0}="{1}"'.format)
+	export_prepend_path = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
 	configure = staticmethod(lambda flags: './configure %s' % ' '.join(flags))
 	onoff = staticmethod({True : 'on', False : 'off'}.get)
 	ONOFF = staticmethod({True : 'ON', False : 'OFF'}.get)
@@ -972,13 +973,12 @@ EOF
 	print 'ok [%s]' % installation_script_path
 
 def gen_activate_star_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
-	export_PATH = lambda var, val: S.export(var, ':'.join(map(os.path.abspath, val) + ['$%s' % var]))
 	with open(P.activate_sh, 'w') as out:
-		print >> out, export_PATH(S.PATH, bin_dirs)
-		print >> out, export_PATH(S.LD_LIBRARY_PATH, lib_dirs)
-		print >> out, export_PATH(S.LIBRARY_PATH, lib_dirs)
-		print >> out, export_PATH(S.CPATH, include_dirs)
-		print >> out, export_PATH(S.PYTHONPATH, python_dirs)
+		print >> out, S.export_prepend_paths(S.PATH, bin_dirs)
+		print >> out, S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs)
+		print >> out, S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs)
+		print >> out, S.export_prepend_paths(S.CPATH, include_dirs)
+		print >> out, S.export_prepend_paths(S.PYTHONPATH, python_dirs)
 
 	with open(P.activate_m, 'w') as out:
 		for wig_name, matlab_root in matlab_dirs.items():
