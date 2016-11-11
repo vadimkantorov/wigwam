@@ -242,6 +242,8 @@ class Wig:
 		self.after_make = []
 		self.before_install = []
 		self.after_install = []
+		self.before_activate_exports = []
+		self.after_activate_exports = []
 
 		self.env = {}
 		self.features_on_off = []
