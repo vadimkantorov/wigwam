@@ -369,8 +369,7 @@ class CmakeWig(Wig):
 		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
 		self.before_make.insert(0, S.CD_BUILD)
 		self.before_install.insert(0, S.CD_BUILD)
-		#self.dependencies += ['cmake'] # modifies class variable, need another way
-		#self.require('cmake')
+		self.depends_on += ['cmake']
 
 	def skip(self, stage):
 		Wig.skip(self, stage)
