@@ -23,7 +23,7 @@
     "dependencies": [
       "texinfo"
     ], 
-    "formatted_version": "228f587", 
+    "formatted_version": "b5f2316", 
     "name": "autoconf-archive", 
     "optional_dependencies": [], 
     "supported_features": []
@@ -41,8 +41,8 @@
   {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v3.0.4", 
-    "name": "bison", 
+    "formatted_version": "v0.3.2", 
+    "name": "bazel", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -52,32 +52,59 @@
     "formatted_version": "v1.59.0", 
     "name": "boost", 
     "optional_dependencies": [], 
-    "supported_features": []
+    "supported_features": [
+      "python"
+    ]
   }, 
   {
-    "config_access": [], 
+    "config_access": [
+      "PATH_TO_NVCC", 
+      "PATH_TO_CUDNN_SO", 
+      "PATH_TO_MATLAB"
+    ], 
     "dependencies": [
       "boost", 
-      "opencv", 
       "protobuf", 
       "glog", 
       "gflags", 
       "hdf5", 
-      "leveldb", 
-      "snappy", 
-      "lmdb"
+      "snappy"
     ], 
-    "formatted_version": "8ef3d63", 
+    "formatted_version": "eb4ba30", 
     "name": "caffe", 
     "optional_dependencies": [
-      "openblas"
+      "openblas", 
+      "leveldb", 
+      "lmdb", 
+      "opencv", 
+      "skimage"
     ], 
     "supported_features": [
       "openblas", 
       "python", 
       "cuda", 
-      "cudnn"
+      "cudnn", 
+      "lmdb", 
+      "leveldb", 
+      "opencv", 
+      "matlab"
     ]
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v3.5.1", 
+    "name": "cmake", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v0.25b0", 
+    "name": "cython", 
+    "optional_dependencies": [], 
+    "supported_features": []
   }, 
   {
     "config_access": [], 
@@ -88,97 +115,17 @@
     "supported_features": []
   }, 
   {
-    "config_access": [
-      "PATH_TO_CUDNN"
-    ], 
-    "dependencies": [
-      "torch", 
-      "fbnnfork"
-    ], 
-    "formatted_version": "3304f0a", 
-    "name": "fbcunn", 
-    "optional_dependencies": [], 
-    "supported_features": [
-      "cudnn"
-    ]
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "folly", 
-      "glog", 
-      "torch", 
-      "thpp", 
-      "fbthrift", 
-      "libedit"
-    ], 
-    "formatted_version": "69dfe63", 
-    "name": "fblualib", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "torch"
-    ], 
-    "formatted_version": "5dc9bb6", 
-    "name": "fbnn", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "torch"
-    ], 
-    "formatted_version": "fc51ff6@getParamsByDevice", 
-    "name": "fbnnfork", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "folly", 
-      "wangle", 
-      "sasl", 
-      "flex", 
-      "bison", 
-      "krb5", 
-      "numactl", 
-      "pkg-config", 
-      "openssl"
-    ], 
-    "formatted_version": "v0.31.0", 
-    "name": "fbthrift", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "torch", 
-      "fblualib", 
-      "fbnn", 
-      "fbcunn", 
-      "fbnnfork"
-    ], 
-    "formatted_version": "7556806", 
-    "name": "fbtorch", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v2.4", 
+    "formatted_version": "v3.0.1", 
     "name": "ffmpeg", 
     "optional_dependencies": [
-      "yasm"
+      "yasm", 
+      "x264"
     ], 
     "supported_features": [
-      "yasm"
+      "yasm", 
+      "x264"
     ]
   }, 
   {
@@ -191,45 +138,19 @@
   }, 
   {
     "config_access": [], 
-    "dependencies": [
-      "gettext"
-    ], 
-    "formatted_version": "v2.5.39", 
-    "name": "flex", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "automake", 
-      "autoconf", 
-      "autoconf-archive", 
-      "libtool", 
-      "boost", 
-      "libunwind", 
-      "libiberty", 
-      "openssl", 
-      "libevent", 
-      "double-conversion", 
-      "glog", 
-      "gflags", 
-      "lz4", 
-      "lzma", 
-      "snappy", 
-      "zlib", 
-      "jemalloc"
-    ], 
-    "formatted_version": "68b39c3", 
-    "name": "folly", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v0.19.5.1", 
-    "name": "gettext", 
+    "formatted_version": "v2.4.0", 
+    "name": "freetype", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [
+      "texinfo"
+    ], 
+    "formatted_version": "v7.10.1", 
+    "name": "gdb", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -238,6 +159,14 @@
     "dependencies": [], 
     "formatted_version": "v2.1.2", 
     "name": "gflags", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v2.10.1", 
+    "name": "git", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -270,7 +199,7 @@
   {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v1.8.15-patch1", 
+    "formatted_version": "v1.8.17", 
     "name": "hdf5", 
     "optional_dependencies": [], 
     "supported_features": []
@@ -280,24 +209,6 @@
     "dependencies": [], 
     "formatted_version": "v6.9.1", 
     "name": "imagemagick", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v3.6.0", 
-    "name": "jemalloc", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [
-      "openssl"
-    ], 
-    "formatted_version": "v1.13.2", 
-    "name": "krb5", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -319,8 +230,10 @@
   }, 
   {
     "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v20150325-3.1", 
+    "dependencies": [
+      "ncurses"
+    ], 
+    "formatted_version": "v20160903-3.1", 
     "name": "libedit", 
     "optional_dependencies": [], 
     "supported_features": []
@@ -336,14 +249,16 @@
   {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v2.25", 
-    "name": "libiberty", 
+    "formatted_version": "v9b", 
+    "name": "libjpeg", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
   {
     "config_access": [], 
-    "dependencies": [], 
+    "dependencies": [
+      "m4"
+    ], 
     "formatted_version": "v2.4.6", 
     "name": "libtool", 
     "optional_dependencies": [], 
@@ -367,16 +282,6 @@
   }, 
   {
     "config_access": [], 
-    "dependencies": [
-      "protobuf"
-    ], 
-    "formatted_version": "63fe14e", 
-    "name": "loadcaffe", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
     "dependencies": [], 
     "formatted_version": "v130", 
     "name": "lz4", 
@@ -388,6 +293,14 @@
     "dependencies": [], 
     "formatted_version": "v5.2.1", 
     "name": "lzma", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v1.4.17", 
+    "name": "m4", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -408,44 +321,86 @@
       "PATH_TO_MATLAB"
     ], 
     "dependencies": [], 
-    "formatted_version": "6e14594", 
+    "formatted_version": "4bef556", 
     "name": "manen-rp", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
   {
     "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v5.9", 
-    "name": "ncurses", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v2.0.10", 
-    "name": "numactl", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v0.2.14", 
-    "name": "openblas", 
+    "dependencies": [
+      "zlib", 
+      "hdf5", 
+      "libtool", 
+      "automake"
+    ], 
+    "formatted_version": "v1.5.8", 
+    "name": "matio", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
   {
     "config_access": [], 
     "dependencies": [
+      "numpy", 
+      "freetype"
+    ], 
+    "formatted_version": "v2.0.0b4", 
+    "name": "matplotlib", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v6.0", 
+    "name": "ncurses", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [
+      "cython"
+    ], 
+    "formatted_version": "v1.11.2", 
+    "name": "numpy", 
+    "optional_dependencies": [
+      "openblas"
+    ], 
+    "supported_features": [
+      "openblas"
+    ]
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v4.0.3", 
+    "name": "octave", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v0.2.19", 
+    "name": "openblas", 
+    "optional_dependencies": [], 
+    "supported_features": [
+      "debug", 
+      "threads"
+    ]
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [
       "pkg-config"
     ], 
-    "formatted_version": "v2.4.11", 
+    "formatted_version": "v3.1.0", 
     "name": "opencv", 
     "optional_dependencies": [
-      "ffmpeg"
+      "ffmpeg", 
+      "opencv_contrib"
     ], 
     "supported_features": [
       "python", 
@@ -453,14 +408,32 @@
       "shared", 
       "tests", 
       "examples", 
-      "ffmpeg"
+      "ffmpeg", 
+      "contrib", 
+      "ipp"
     ]
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "f3ca1a2", 
+    "name": "opencv_contrib", 
+    "optional_dependencies": [], 
+    "supported_features": []
   }, 
   {
     "config_access": [], 
     "dependencies": [], 
     "formatted_version": "v1_0_2d", 
     "name": "openssl", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [], 
+    "formatted_version": "v3.4.1", 
+    "name": "pillow", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -475,10 +448,12 @@
   {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v3.0.0-alpha-3", 
+    "formatted_version": "v3.1.0", 
     "name": "protobuf", 
     "optional_dependencies": [], 
-    "supported_features": []
+    "supported_features": [
+      "python"
+    ]
   }, 
   {
     "config_access": [], 
@@ -490,33 +465,32 @@
   }, 
   {
     "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v2.1.26", 
-    "name": "sasl", 
+    "dependencies": [
+      "numpy"
+    ], 
+    "formatted_version": "v0.18.1", 
+    "name": "scipy", 
+    "optional_dependencies": [], 
+    "supported_features": []
+  }, 
+  {
+    "config_access": [], 
+    "dependencies": [
+      "numpy", 
+      "cython", 
+      "pillow", 
+      "matplotlib"
+    ], 
+    "formatted_version": "0.12.3", 
+    "name": "skimage", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
   {
     "config_access": [], 
     "dependencies": [], 
-    "formatted_version": "v2.0.3", 
-    "name": "sdl", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v1.1.1", 
+    "formatted_version": "v1.1.3", 
     "name": "snappy", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
-    "config_access": [], 
-    "dependencies": [], 
-    "formatted_version": "v14.4.2", 
-    "name": "sox", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -529,49 +503,35 @@
     "supported_features": []
   }, 
   {
-    "config_access": [], 
-    "dependencies": [
-      "folly", 
-      "fbthrift", 
-      "torch"
-    ], 
-    "formatted_version": "a33971a", 
-    "name": "thpp", 
-    "optional_dependencies": [], 
-    "supported_features": []
-  }, 
-  {
     "config_access": [
-      "PATH_TO_NVCC"
+      "PATH_TO_NVCC", 
+      "PATH_TO_CUDNN_SO"
     ], 
     "dependencies": [
       "openblas", 
       "readline", 
       "ncurses", 
-      "sdl", 
-      "imagemagick", 
-      "magma"
+      "gnuplot", 
+      "libjpeg", 
+      "unzip", 
+      "cmake"
     ], 
-    "formatted_version": "b37c721", 
+    "formatted_version": "c440b66", 
     "name": "torch", 
     "optional_dependencies": [
-      "gnuplot", 
-      "fftw", 
-      "sox"
+      "magma"
     ], 
     "supported_features": [
       "qt", 
       "cuda", 
-      "dsp"
+      "cudnn"
     ]
   }, 
   {
     "config_access": [], 
-    "dependencies": [
-      "hdf5"
-    ], 
-    "formatted_version": "35bd42b", 
-    "name": "torch-hdf5", 
+    "dependencies": [], 
+    "formatted_version": "v60", 
+    "name": "unzip", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
@@ -595,11 +555,9 @@
   }, 
   {
     "config_access": [], 
-    "dependencies": [
-      "folly"
-    ], 
-    "formatted_version": "v0.13.0", 
-    "name": "wangle", 
+    "dependencies": [], 
+    "formatted_version": "72d53ab", 
+    "name": "x264", 
     "optional_dependencies": [], 
     "supported_features": []
   }, 
