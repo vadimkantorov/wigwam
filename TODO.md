@@ -54,7 +54,6 @@
  - figure out a workaround for Torch image package (gpu001)
  - install git before doing find_last_git_commit
  - put dependencies for git
- - gdb fails to install on gpu103, likely because of binutils
 
 # Website
  - add wig package uri to details
