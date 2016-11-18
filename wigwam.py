@@ -112,6 +112,7 @@ class S:
 	prefix_MAKE_INSTALL_FLAG = 'prefix="$PREFIX"'
 	PREFIX_MAKE_INSTALL_FLAG = 'PREFIX="$PREFIX"'
 	DESTDIR_MAKE_INSTALL_FLAG = 'DESTDIR="$PREFIX"'
+	WIGWAM_PREFIX = 'WIGWAM_PREFIX'
 	FPIC_FLAG = '-fPIC'
 	CMAKE_INSTALL_PREFIX_FLAG = '-DCMAKE_INSTALL_PREFIX="$PREFIX"'
 	CMAKE_PREFIX_PATH_FLAG = '-DCMAKE_PREFIX_PATH="$PREFIX"'
@@ -982,6 +983,7 @@ def gen_activate_star_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matla
 		print >> out, S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs)
 		print >> out, S.export_prepend_paths(S.CPATH, include_dirs)
 		print >> out, S.export_prepend_paths(S.PYTHONPATH, python_dirs)
+		print >> out, S.export(S.WIGWAM_PREFIX, os.path.abspath(P.prefix))
 
 	with open(P.activate_m, 'w') as out:
 		for wig_name, matlab_root in matlab_dirs.items():
