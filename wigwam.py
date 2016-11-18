@@ -792,6 +792,7 @@ def search(wig_name, output_json):
 	def w(wig_name):
 		wig = WigConfig.find_and_construct_wig(wig_name)
 		wig.sources = wig.default_dict_config().get(W.SOURCES)
+		wig.source_fetcher.configure(wig, wig.sources)
 		return wig
 
 	wigs = map(w, sorted(set(wig_names)))
