@@ -775,7 +775,7 @@ def log(wig_name, fetch = False, configure = False, make = False, install = Fals
 
 def search(wig_name, output_json):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
-	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'supported_features' : wig.supported_features, 'config_access' : wig.config_access, 'formatted_version' : wig.trace()[W.FORMATTED_VERSION]}
+	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'supported_features' : wig.supported_features, 'config_access' : wig.config_access, 'formatted_version' : wig.trace()[W.FORMATTED_VERSION], 'uri' : wig.trace().get(W.URI, 'N/A')}
 
 	if wig_name:
 		wig_names = [wig_name]
