@@ -41,7 +41,6 @@
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
- - wigwam should have a command that shows its defined env directories
  - remove v* prefix from versions
  - when adding symlinks to the library, also add symlink to the actual library
  
