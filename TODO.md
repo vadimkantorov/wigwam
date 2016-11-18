@@ -13,7 +13,6 @@
  - fail gracefully if a wig from Wigwamfile.installed has been removed
 
 # wigwam build
- - CMAKE_PREFIX_PATH in wigwam_activate.sh
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
