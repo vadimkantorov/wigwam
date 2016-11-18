@@ -42,7 +42,7 @@
  - Wigwamfile should list installed features
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
  - remove v* prefix from versions
- - when adding symlinks to the library, also add symlink to the actual library
+ - when adding symlinks to the library, also add symlink to the actual library (some software will link against the final library, not the symlinked .so)
  
 # wigs
  - py-lmdb wig
