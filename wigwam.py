@@ -1014,7 +1014,7 @@ def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
 if __name__ == '__main__':
 	sys.excepthook = unhandled_exception_hook
 
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(prog = 'wigwam')
 	parser.add_argument('--root')
 	parser.add_argument('--repo', action = 'append', default = [])
 	parser.add_argument('--global', action = 'store_true')
