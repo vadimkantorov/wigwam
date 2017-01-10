@@ -1,11 +1,9 @@
 # wigwam install 
  - Parsing Wigwamfile.installed should not break if features/config values are not there. Parsing should be light-weight
- - change way of specifyinng version and features, so that quotes are not needed
  - Check wigwam install manen-rp/torch --reinstall
- - Install lua/pip* wigs at last (because we don't know dependencies for them)
  - Should not add features that do not exist, even in dry mode
  - Should check sources format
- - Allow redefine git url for wigs in Wigwamfile (think caffe and clones)
+ - Install git automatically, even before a find_last_commit.
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
@@ -16,6 +14,7 @@
  - OperationScope for updating Wigwamfile / Wigwamfile.config, instead of passing "old"
  - fixed installation order
  - setup.* writes should be transactional
+ - Install lua/pip* wigs at last (because we don't know dependencies for them)
  - wigwam_activate.m: Should set the env vars + be called in S.matlab
  - wigwam_activate.py
  - wigwam_activate.lua
