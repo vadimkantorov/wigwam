@@ -628,24 +628,23 @@ def lint(old = None):
 
 	return end
 
-def install(wig_strings, dry, config, reinstall, only, dangerous, verbose):
+def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, dangerous, verbose):
 	init()
 
 	assert (not only) or (only and dangerous)
 	
 	old = DictConfig.read(P.wigwamfile)
 	end = old.patch({W.CONFIG : dict(map(lambda x: x.split('='), config))})
-	
-	wig_names = []
-	for wig_string in wig_strings:
-		args = re.search(r"(?P<wig_name>.+?)(?:\[(?P<sources>.+)\])?(?:\((?P<features>[+-].+)\))?$", wig_string).groupdict()
-		wig_name = args['wig_name']
+	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).default_dict_config()
-		dict_config.update({arg: args[arg] for arg in ['sources', 'features'] if args[arg] != None})
-		end = end.patch({ wig_name : dict_config })
-		wig_names.append(wig_name)
+		if enable + disable:
+			dict_config.update({'features' : ' '.join([char + feature for features, char in zip([enable, disable], ['+', '-']) for feature in features])})
+		if git or version:
+			dict_config.update({'sources' : 'v' + version if version else 'git' + (' ' + git if git != True else '')})
 
+		end = end.patch({ wig_name : dict_config })
 	end.save(P.wigwamfile)
+
 	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
 def upgrade(wig_names, dry, only, dangerous):
@@ -1036,7 +1035,12 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('install')
 	cmd.set_defaults(func = install)
 	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('wig_strings', nargs = '+')
+	cmd.add_argument('wig_names', nargs = '+')
+	cmd.add_argument('--enable', nargs = '+', default = [])
+	cmd.add_argument('--disable', nargs = '+', default = [])
+	group = cmd.add_mutually_exclusive_group()
+	group.add_argument('--git', nargs = '?', const = True)
+	group.add_argument('--version')
 	cmd.add_argument('--config', '-D', action = 'append', default = [])
 	cmd.add_argument('--reinstall', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
