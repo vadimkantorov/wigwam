@@ -7,6 +7,7 @@ import pipes
 import shutil
 import inspect
 import urllib2
+import urlparse
 import argparse
 import itertools
 import traceback
@@ -184,11 +185,14 @@ class SourceFetcher:
 		if wig.git_commit:
 			self.clues[W.GIT_COMMIT] = wig.git_commit
 
-		splitted = sources.split('@')
+		splitted = map(lambda x: x.strip(), sources.split('@'))
 		if len(splitted[0]) > 0:
-			self.clues[W.GIT_COMMIT] = splitted[0].strip()
+			if urlparse.urlparse(splitted[0]).netloc:
+				self.clues[W.URI] = splitted[0]
+			else:
+				self.clues[W.GIT_COMMIT] = splitted[0]
 		if len(splitted) > 1:
-			self.clues[W.GIT_BRANCH] = splitted[1].strip()
+			self.clues[W.URI] = splitted[1]
 
 		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_git(self.clues[W.URI], target_dir, init_submodules = self.clues[W.GIT_INIT_SUBMODULES], tag = self.clues.get(W.GIT_COMMIT) or self.clues.get(W.GIT_BRANCH))
 
