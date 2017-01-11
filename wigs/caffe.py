@@ -7,7 +7,9 @@ class caffe(Wig):
 	default_features = ['+openblas', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
 	
 	def setup(self):
-		self.skip('make parallel')
+		self.skip('make parallel', 'install')
+		self.lib_dirs += [os.path.join(self.paths.src_dir, 'build', 'lib')]
+		self.bin_dirs += [os.path.join(self.paths.src_dir, 'build', 'tools')]
 		self.makefile_config_fixes = ''
 		
 	def set_makefile_config_var_commented(self, var_name, var_value):
@@ -60,8 +62,3 @@ class caffe(Wig):
 
 	def gen_configure_snippet(self):
 		return ['cat Makefile.config.example %s > Makefile.config' % self.makefile_config_fixes]
-
-	def gen_install_snippet(self):
-		return [S.ln('$(pwd)/build/lib/libcaffe.so', '$PREFIX/lib/libcaffe.so'), 
-				S.ln('$(pwd)/build/lib/libcaffe.a', '$PREFIX/lib/libcaffe.a'),
-				S.ln('$(pwd)/build/tools/caffe', '$PREFIX/bin/caffe')]
