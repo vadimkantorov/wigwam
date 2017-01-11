@@ -760,15 +760,15 @@ def clean():
 		if os.path.exists(f):
 			os.remove(f)
 
-def init():
+def init(wigwamfile = None):
 	for d in P.all_dirs:
 		if not os.path.exists(d):
 			os.makedirs(d)
 	
-	for wigwamfile in [P.wigwamfile, P.wigwamfile_installed]:
-		if not os.path.exists(wigwamfile):
-			with open(wigwamfile, 'w') as f:
-				json.dump({}, f)
+	for wigwamfile_to_init, filler in [(P.wigwamfile, ((urllib2.urlopen if urlparse.urlparse(wigwamfile).netloc else open)(wigwamfile).read()) if wigwamfile else '{}'), (P.wigwamfile_installed, '{}')]:
+		if not os.path.exists(wigwamfile_to_init):
+			with open(wigwamfile_to_init, 'w') as f:
+				json.dump(json.loads(filler), f)
 
 def log(wig_name, fetch = False, configure = False, make = False, install = False):
 	arg_stages = locals()
@@ -1025,7 +1025,10 @@ if __name__ == '__main__':
 	
 	subparsers.add_parser('clean').set_defaults(func = clean)
 	subparsers.add_parser('lint').set_defaults(func = lint)
-	subparsers.add_parser('init').set_defaults(func = init)
+	
+	cmd = subparsers.add_parser('init')
+	cmd.add_argument('--wigwamfile')
+	cmd.set_defaults(func = init)
 	
 	cmd = subparsers.add_parser('in')
 	cmd.set_defaults(func = enter)
