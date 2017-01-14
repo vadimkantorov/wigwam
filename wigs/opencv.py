@@ -19,7 +19,7 @@ class opencv(CmakeWig):
 
 	def switch_python_on(self):
 		self.cmake_flags += ['-DPYTHON_PACKAGES_PATH="%s"' % S.PYTHON_DEFAULT_MODULE_PATH]
-		self.switch('python', True)
+		self.switch('python2', True)
 	
 	def switch_cuda(self, on):
 		self.cmake_flags += ['-DWITH_CUDA=%s' % S.ONOFF(on)]
@@ -35,6 +35,6 @@ class opencv(CmakeWig):
 		self.switch('EXAMPLES', on)
 
 	def switch(self, feat_name, on):
-		if feat_name not in ['shared', 'tests', 'perf_tests', 'examples']:
+		if feat_name not in ['SHARED_LIBS', 'TESTS', 'PERF_TESTS', 'EXAMPLES']:
 			feat_name = 'opencv_%s' % feat_name
 		self.cmake_flags += ['-DBUILD_%s=%s' % (feat_name, S.ONOFF(on))]
