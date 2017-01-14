@@ -18,7 +18,7 @@ class opencv(CmakeWig):
 		self.before_configure += [S.export(S.PKG_CONFIG_PATH, "$PREFIX/lib/pkgconfig")]
 
 	def switch_python_on(self):
-		self.cmake_flags += ['-DPYTHON_PACKAGES_PATH="%s"' % S.PYTHON_DEFAULT_MODULE_PATH]
+		self.cmake_flags += ['-DPYTHON2_PACKAGES_PATH="%s"' % S.PYTHON_DEFAULT_MODULE_PATH]
 		self.switch('python2', True)
 	
 	def switch_cuda(self, on):

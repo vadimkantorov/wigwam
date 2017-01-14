@@ -42,9 +42,8 @@
  
 # wigs
  - py-lmdb wig
- - symlink caffe's includes
  - glib wig + ref from pkg-config
  - OpenBLAS should depend on gfortran for a static library
- - figure out a workaround for Torch image package (gpu001)
  - install git before doing find_last_git_commit
  - put dependencies for git
+ - for opencv support python2 and python3
