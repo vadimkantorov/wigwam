@@ -47,3 +47,4 @@
  - install git before doing find_last_git_commit
  - put dependencies for git
  - for opencv support python2 and python3
+ - wigwam command should work in bash scripts (aliases break)
