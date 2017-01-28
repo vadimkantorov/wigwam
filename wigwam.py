@@ -942,7 +942,8 @@ EOF
 				u(wig.after_fetch)
 			
 			debug_script_path = P.debug_script(wig_name)
-			w('[ -d "%s" ] && %s' % (wig.paths.src_dir, S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh'))))
+			w(S.mkdir_p(wig.paths.src_dir))
+			w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
 			with open(debug_script_path, 'w') as out_debug:
 				def d(x, prepend = ''):
 					if x != 'dump_env':
