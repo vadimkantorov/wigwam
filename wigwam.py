@@ -333,8 +333,8 @@ class Wig:
 	def trace(self):
 		t = {W.DEPENDS_ON : self.depends_on,
 			W.FEATURES : ' '.join(self.features_on_off),
-			W.SOURCES : self.sources,
-			W.FORMATTED_VERSION : (self.sources.split() + ['N/A'])[1]
+			W.SOURCES : self.sources or 'N/A',
+			W.FORMATTED_VERSION : ((filter(bool, self.sources or '').split()) + ['N/A'])[1]
 		}
 		t.update(self.source_fetcher.clues)
 		return t
@@ -413,7 +413,6 @@ class DebWig(Wig):
 	def __init__(self, name):
 		Wig.__init__(self, name)
 
-		self.sources = None
 		self.skip('make')
 		
 		if self.name not in DebWig.APT_GET_OUTPUT_CACHE:
@@ -421,6 +420,7 @@ class DebWig(Wig):
 
 		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
 		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
+		self.sources = (self.deb_uris + [''])[0]
 	
 		if len(self.deb_uris) == 0:
 			self.skip(*Wig.all_installation_stages)
