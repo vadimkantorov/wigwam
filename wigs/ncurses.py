@@ -3,5 +3,5 @@ class ncurses(Wig):
 	last_release_version = 'v6.0'
 
 	def setup(self):
-		self.before_configure += [S.export(S.CFLAGS, '-fPIC')]
+		self.before_configure += [S.export(S.CFLAGS, '-fPIC'), S.export(S.CPPFLAGS, '-P')]
 		self.before_make += [S.export(S.CFLAGS, '-fPIC')]
