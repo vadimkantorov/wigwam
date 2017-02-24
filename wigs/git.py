@@ -5,3 +5,4 @@ class git(Wig):
 
 	def setup(self):
 		self.before_configure += [S.make(['configure'])]
+		self.configure_flags += ['--without-tcltk']
