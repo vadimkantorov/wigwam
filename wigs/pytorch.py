@@ -3,7 +3,7 @@ class pytorch(PythonWig):
 	dependencies = ['numpy', 'cmake'] #, 'pip-pyyaml', 'pip-cffi', 'setuptools']
 	optional_dependencies = ['magma']
 	supported_features = ['cuda']
-	default_features = ['cuda']
+	default_features = ['+cuda']
 
 	def switch_cuda(self, on):
 		if on:
