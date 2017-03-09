@@ -2,7 +2,7 @@ class numpy(PythonWig):
 	tarball_uri = 'https://github.com/numpy/numpy/archive/v$RELEASE_VERSION$.tar.gz'
 	last_release_version = 'v1.11.2'
 	git_uri = 'https://github.com/numpy/numpy'
-	dependencies = ['cython', 'setuptools']
+	dependencies = ['cython'] # 'setuptools'
 	optional_dependencies = ['openblas']
 	supported_features = ['openblas']
 	default_features = ['+openblas']
