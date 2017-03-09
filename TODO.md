@@ -4,6 +4,9 @@
  - Should not add features that do not exist, even in dry mode
  - Should check sources format
  - Install git automatically, even before a find_last_commit.
+ 
+# wigwam remove
+- should not require dangerous if package isn't really installed
 
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
