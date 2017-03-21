@@ -3,7 +3,7 @@ class ffmpeg(Wig):
 	last_release_version = 'v3.1.2'
 	optional_dependencies = ['yasm', 'x264']
 	supported_features = ['yasm', 'x264']
-	dependencies = ['bzip2', 'lzma']
+	dependencies = ['bzip2', 'lzma', 'zlib']
 	default_features = ['+yasm']
 
 	def switch_yasm_on(self):
