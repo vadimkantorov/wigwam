@@ -69,6 +69,7 @@ class P:
 			P.prefix_python_dirs += [module_full_path]
 			P.artifact_dirs += [root_full_path]
 			P.all_dirs += [module_full_path, bin_path, include_full_path]
+			P.prefix_bin_dirs += [bin_path]
 
 		P.repos = [P.userwigdir] + extra_repos
 
