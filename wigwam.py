@@ -966,7 +966,7 @@ EOF
 				d(['# ' + line for line in S.dump_env.split('\n')[1:-1]])
 				d('')
 
-				with Stage('Configuring', 'configure.txt', s('all', 'fetch', 'configure', 'make'), hook = d) as u:
+				with Stage('Configuring', 'configure.txt', s('all', 'fetch', 'configure'), hook = d) as u:
 					u(wig.before_configure)
 					u('dump_env')
 					u(wig.gen_configure_snippet())
