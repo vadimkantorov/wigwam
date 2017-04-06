@@ -9,6 +9,9 @@
 # wigwam remove
 - should not require dangerous if package isn't really installed
 
+# wigwam clean
+- support an option for removing Wigwamfile
+
 # wigwam upgrade
  - use configure flags / installation snippets in fingerprint, possibly save fingerprint in Wigwamfile.installed
  - right now upgrade does not lead to reinstalling of all dependent libraries, but it should
