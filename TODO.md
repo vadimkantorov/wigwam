@@ -26,6 +26,7 @@
 # wigwam in
 - For every directory on LIBRARY_PATH: make dummy sub-directory sym-linking $(gcc -print-multi-os-directory, often ../lib64; gcc -print-multiarch, the latter doesn't exist on old gcc) to itself
 - export also LD_RUN_PATH (what's the difference with LIBRARY_PATH?)
+- wigwam in should not fail after wigwam clean
 
 # Wig API
  - a way to provision a package/feature from another package feature trigger
