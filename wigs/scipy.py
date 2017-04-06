@@ -22,3 +22,6 @@ class scipy(PythonWig):
 			'library_dirs = %s' % os.path.pathsep.join(lib_dirs),
 			'runtime_library_dirs = %s' % os.path.pathsep.join(lib_dirs)
 		]
+
+	def gen_configure_snippet(self):
+		return ['cat <<- EOF > site.cfg'] + self.site_cfg + ['EOF']
