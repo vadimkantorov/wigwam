@@ -6,6 +6,9 @@
  - Install git automatically, even before a find_last_commit.
  - Pip-wigs should use wigwam-installed pip if available
  
+# wigwam run
+- wigwam run python -c "import urllib2; urllib2.urlopen('http://python.org/')" should not blow
+ 
 # wigwam remove
 - should not require dangerous if package isn't really installed
 
