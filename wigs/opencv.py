@@ -3,7 +3,7 @@ class opencv(CmakeWig):
 	last_release_version ='v3.2.0'
 	git_uri = 'https://github.com/itseez/opencv'
 	dependencies = ['pkg-config']
-	optional_dependencies = ['ffmpeg', 'opencv_contrib']
+	optional_dependencies = ['ffmpeg', 'opencv_contrib', 'numpy']
 	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg', 'contrib', 'ipp']
 	default_features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg', '-ipp']
 
@@ -20,6 +20,7 @@ class opencv(CmakeWig):
 
 	def switch_python_on(self):
 		self.cmake_flags += ['-DPYTHON2_PACKAGES_PATH="%s"' % S.PYTHON_DEFAULT_MODULE_PATH]
+		self.require('numpy')
 		self.switch('python2', True)
 	
 	def switch_cuda(self, on):
