@@ -718,6 +718,12 @@ def remove(wig_names, dangerous):
 	
 	requested = DictConfig.read(P.wigwamfile)
 	installed = DictConfig.read(P.wigwamfile_installed)
+	
+	wigs_to_remove_dangerously = filter(lambda wig_name: wig_name in installed, wig_names)
+	if wigs_to_remove_dangerously and not dangerous:
+		print 'Wigs %s are already installed. Use --dangerous.' % repr(wigs_to_remove_dangerously)
+		return
+	
 	for wig_name in wig_names:
 		requested.pop(wig_name, None)
 		installed.pop(wig_name, None)
@@ -1090,7 +1096,7 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
 	cmd.add_argument('wig_names', nargs = '+')
-	cmd.add_argument('--dangerous', action = 'store_true', required = True)
+	cmd.add_argument('--dangerous', action = 'store_true')
 	
 	cmd = subparsers.add_parser('path')
 	cmd.add_argument('file', nargs = '?', choices = ['wigwamfile', 'activate'])
