@@ -5,13 +5,15 @@
  - Should check sources format
  - Install git automatically, even before a find_last_commit.
  - Pip-wigs should use wigwam-installed pip if available
- 
+```
+ CUDNN_URL="http://developer.download.nvidia.com/compute/redist/cudnn/v5.1/cudnn-8.0-linux-x64-v5.1.tgz"
+wget ${CUDNN_URL}
+sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /usr/local
+```
+
 # wigwam run
 - wigwam run python -c "import urllib2; urllib2.urlopen('http://python.org/')" should not blow
  
-# wigwam remove
-- should not require dangerous if package isn't really installed
-
 # wigwam clean
 - support an option for removing Wigwamfile
 
