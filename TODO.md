@@ -29,9 +29,6 @@ sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /usr/local
  - fixed installation order
  - setup.* writes should be transactional
  - Install lua/pip* wigs at last (because we don't know dependencies for them)
- - wigwam_activate.m: Should set the env vars + be called in S.matlab
- - wigwam_activate.py
- - wigwam_activate.lua
 
 # Wig API
  - a way to provision a package/feature from another package feature trigger
