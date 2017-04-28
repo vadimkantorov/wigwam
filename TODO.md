@@ -11,8 +11,10 @@ wget ${CUDNN_URL}
 sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /usr/local
 ```
 
-# wigwam run
-- wigwam run python -c "import urllib2; urllib2.urlopen('http://python.org/')" should not blow
+# wigwam run / in
+- should be one method
+- For every directory on LIBRARY_PATH: make dummy sub-directory sym-linking $(gcc -print-multi-os-directory, often ../lib64; gcc -print-multiarch, the latter doesn't exist on old gcc) to itself
+- export also LD_RUN_PATH (what's the difference with LIBRARY_PATH?)
  
 # wigwam clean
 - support an option for removing Wigwamfile
@@ -30,10 +32,6 @@ sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /usr/local
  - wigwam_activate.m: Should set the env vars + be called in S.matlab
  - wigwam_activate.py
  - wigwam_activate.lua
- 
-# wigwam in
-- For every directory on LIBRARY_PATH: make dummy sub-directory sym-linking $(gcc -print-multi-os-directory, often ../lib64; gcc -print-multiarch, the latter doesn't exist on old gcc) to itself
-- export also LD_RUN_PATH (what's the difference with LIBRARY_PATH?)
 
 # Wig API
  - a way to provision a package/feature from another package feature trigger
