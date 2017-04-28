@@ -817,17 +817,17 @@ def search(wig_name, output_json):
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
 def enter(dry, verbose):
-	if dry:
-		if os.path.exists(P.activate_sh):
+	if os.path.exists(P.activate_sh):
+		if dry:
 			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
 			print ''
 			with open(P.activate_sh, 'r') as f:
 				print f.read()
 		else:
-			print 'The activate shell script doesn''t exist yet.'
+			cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh)
+			subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 	else:
-		cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh)
-		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
+		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
 def run(cmds, verbose):
 	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(cmds)))
