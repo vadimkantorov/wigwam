@@ -830,8 +830,11 @@ def enter(dry, verbose):
 		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
 def run(cmds, verbose):
-	cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(cmds)))
-	subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
+	if os.path.exists(P.activate_sh):
+		cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))
+		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
+	else:
+		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
 	for script_path in P.generated_installation_scripts:
