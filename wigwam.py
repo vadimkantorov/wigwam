@@ -1084,7 +1084,7 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('run')
 	cmd.set_defaults(func = run)
 	cmd.add_argument('--verbose', action = 'store_true')
-	cmd.add_argument('cmds', nargs = '+')
+	cmd.add_argument('cmds', nargs = argparse.REMAINDER)
 	
 	cmd = subparsers.add_parser('upgrade')
 	cmd.set_defaults(func = upgrade)
