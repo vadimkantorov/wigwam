@@ -752,7 +752,8 @@ def status(verbose):
 		uri = '' if is_conflicted else (installed[wig_name][W.URI] if W.URI in installed[wig_name] else 'N/A')
 		print fmt % ('*' if is_installed else '', wig_name, version, uri)
 
-def clean():
+def clean(wigwamfile, dangerous):
+	assert not wigwamfile or dangerous
 	for d in P.artifact_dirs:
 		if os.path.exists(d):
 			try:
@@ -764,7 +765,7 @@ def clean():
 				
 			os.makedirs(d)
 
-	for f in P.generated_files:
+	for f in P.generated_files + ([P.wigwamfile] if wigwamfile else []):
 		if os.path.exists(f):
 			os.remove(f)
 
@@ -1035,7 +1036,11 @@ if __name__ == '__main__':
 	parser.add_argument('--global', action = 'store_true')
 	subparsers = parser.add_subparsers()
 	
-	subparsers.add_parser('clean').set_defaults(func = clean)
+	cmd = subparsers.add_parser('clean')
+	cmd.add_argument('--wigwamfile', action = 'store_true')
+	cmd.add_argument('--dangerous', action = 'store_true')
+	cmd.set_defaults(func = clean)
+	
 	subparsers.add_parser('lint').set_defaults(func = lint)
 	
 	cmd = subparsers.add_parser('init')
