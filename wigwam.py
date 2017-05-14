@@ -46,12 +46,11 @@ class P:
 		P.install_script = p('install.generated.sh')
 		P.upgrade_script = p('upgrade.generated.sh')
 		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
-		P.wigwamfile_old = p(P.wigwamfilename + '.old')
-
+		
 		P.artifact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root]
 
 		P.generated_installation_scripts = [P.build_script, P.install_script]
-		P.generated_files = P.generated_installation_scripts + [P.wigwamfile_installed, P.wigwamfile_old, P.activate_sh, P.activate_m]
+		P.generated_files = P.generated_installation_scripts + [P.wigwamfile_installed, P.activate_sh, P.activate_m]
 
 		P.all_dirs = [P.root] + P.artifact_dirs
 
@@ -614,9 +613,7 @@ def lint(old = None):
 
 	begin = DictConfig.read(P.wigwamfile)
 	end = begin.clone()
-	if old != None:
-		old.save(P.wigwamfile_old)
-	else:
+	if old is None:
 		old = begin
 
 	while True:
@@ -630,7 +627,7 @@ def lint(old = None):
 	if len(to_install) > 0:
 		end = begin.patch(to_install)
 		end.save(P.wigwamfile)
-		print 'Lint reconfigured %d packages (backup in "%s").' % (len(to_install), P.wigwamfile_old)
+		print 'Lint reconfigured %d packages.' % len(to_install)
 
 	return end
 
