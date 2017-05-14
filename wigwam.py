@@ -43,14 +43,11 @@ class P:
 		P.activate_sh = p('wigwam_activate.sh')
 		P.activate_m = p('wigwam_activate.m')
 		P.build_script = p('build.generated.sh')
-		P.install_script = p('install.generated.sh')
-		P.upgrade_script = p('upgrade.generated.sh')
 		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
 		
 		P.artifact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root]
 
-		P.generated_installation_scripts = [P.build_script, P.install_script]
-		P.generated_files = P.generated_installation_scripts + [P.wigwamfile_installed, P.activate_sh, P.activate_m]
+		P.generated_files = [P.build_script, P.wigwamfile_installed, P.activate_sh, P.activate_m]
 
 		P.all_dirs = [P.root] + P.artifact_dirs
 
@@ -648,7 +645,7 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 		end = end.patch({ wig_name : dict_config })
 	end.save(P.wigwamfile)
 
-	build(dry = dry, old = old, script_path = P.install_script, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
+	build(dry = dry, old = old, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
 def upgrade(wig_names, dry, only, dangerous):
 	init()
@@ -672,13 +669,13 @@ def upgrade(wig_names, dry, only, dangerous):
 			end.patch({wig_name : {W.SOURCES : dict_config[W.SOURCES]}})
 
 	end.save(P.wigwamfile)
-	build(dry = dry, old = old, script_path = P.upgrade_script, seeds = wig_names, install_only_seeds = only)
+	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = only)
 
 
-def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
+def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
 	init()
 
-	if lint(old = old) == None:
+	if lint(old = old) is None:
 		print 'Lint check failed. Quitting.'
 		return
 
@@ -694,16 +691,15 @@ def build(dry, old = None, script_path = None, seeds = [], force_seeds_reinstall
 		to_install = requested_installed_diff
 
 	installation_order = requested.compute_installation_order(to_install, up = True, wig_name_subset = wig_name_subset)
-	script_path = script_path or P.build_script
-	gen_activate_star_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs, requested.matlab_dirs)
-	gen_installation_script(script_path, requested.wigs, requested.env, installation_order)
+	gen_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs, requested.matlab_dirs)
+	gen_installation_script(P.build_script, requested.wigs, requested.env, installation_order)
 
 	if not dry:
 		if len(installation_order) == 0:
 			print '0 packages to be reconfigured. Quitting.'
 		else:
 			print 'Running installation script now:'
-			return_code = subprocess.call(['bash', script_path] if not verbose else ['bash', '-xv', script_path])
+			return_code = subprocess.call(['bash', P.build_script] if not verbose else ['bash', '-xv', P.build_script])
 			if return_code == 0:
 				print ''
 				print 'ALL OK. KTHXBAI!'
@@ -835,9 +831,8 @@ def run(cmds, verbose):
 		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
 def gen_installation_script(installation_script_path, wigs, env, installation_order):
-	for script_path in P.generated_installation_scripts:
-		if os.path.exists(script_path):
-			os.remove(script_path)
+	if os.path.exists(installation_script_path):
+		os.remove(installation_script_path)
 
 	if not installation_order:
 		return
@@ -990,7 +985,7 @@ EOF
 	
 	print 'ok [%s]' % installation_script_path
 
-def gen_activate_star_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
+def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
 	with open(P.activate_sh, 'w') as out:
 		print >> out, S.export_prepend_paths(S.PATH, bin_dirs)
 		print >> out, S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs)
