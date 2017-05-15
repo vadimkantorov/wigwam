@@ -55,8 +55,7 @@ class P:
 
 		P.log_base = staticmethod(lambda wig_name: os.path.join(P.log_root, wig_name))
 		P.debug_script = staticmethod(lambda wig_name: os.path.join(P.debug_root, wig_name + '.sh'))
-		P.download = staticmethod(('wget {0} -O "{1}"' if subprocess.call(['which', 'wget'], stdout = subprocess.PIPE, stderr = subprocess.PIPE) == 0 else 'curl {0} -o "{1}"').format)
-
+		
 class W:
 	CONFIG = '_config'
 	FEATURES = 'features'
@@ -99,6 +98,7 @@ class S:
 	CD_PARENT = 'cd ..'
 	MAKEFLAGS = 'MAKEFLAGS'
 	
+	download = staticmethod(('wget {0} -O "{1}"' if subprocess.call(['which', 'wget'], stdout = subprocess.PIPE, stderr = subprocess.PIPE) == 0 else 'curl {0} -o "{1}"').format)
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
 	make_jobs = staticmethod('-j{}'.format)
 	export = staticmethod('export {0}="{1}"'.format)
@@ -138,7 +138,7 @@ class S:
 		assert len(ext) == 1
 		downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + ext[0])
 
-		return [P.download(uri, downloaded_file_path),
+		return [S.download(uri, downloaded_file_path),
 				S.mkdir_p(target_dir),
 'tar -xf %s -C "%s"%s' % (downloaded_file_path, target_dir, ' --strip-components=%d' % strip_components),
 		]
@@ -409,7 +409,7 @@ class DebWig(Wig):
 		self.source_fetcher.clues = {W.URI : ', '.join(self.deb_uris), W.VERSION: self.find_last_release_version()}
 	
 	def gen_fetch_snippet(self):
-		return [P.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
+		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
 	
 	def gen_install_snippet(self):
 		return ['dpkg -x "%s" "%s"' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
