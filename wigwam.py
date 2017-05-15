@@ -20,14 +20,14 @@ class P:
 	wigwamdirname = '.wigwam'
 	wigwamfilename = 'Wigwamfile'
 	userwigdir = 'wigs'
-	python_prefix_scheme = ('python', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
+	python_prefix_scheme = ('lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
 	
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
 		P.root = root
-		P.wigwamfile = wigwamfile
 		p = lambda x: os.path.join(P.root, x)
 
+		P.wigwamfile = wigwamfile
 		P.src_tree = p('src')
 		P.prefix = p('prefix')
 		P.prefix_deb = os.path.join(P.prefix, 'deb')
@@ -35,21 +35,20 @@ class P:
 		P.tar_root = p('tar')
 		P.deb_root = p('deb')
 		P.debug_root = p('debug')
+		P.python_root = p('python')
 
 		P.activate_sh = p('wigwam_activate.sh')
 		P.activate_m = p('wigwam_activate.m')
 		P.build_script = p('build.generated.sh')
 		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
-		
-		
-		python_root = os.path.join(P.prefix, P.python_prefix_scheme[0])
-		python_module_path,  python_bin_path, python_include_path = [os.path.join(python_root, path_component) for path_component in P.python_prefix_scheme]
+				
+		python_module_path,  python_bin_path, python_include_path = [os.path.join(P.python_root, path_component) for path_component in P.python_prefix_scheme]
 		P.prefix_bin_dirs = [os.path.join(P.prefix, 'bin'), os.path.join(P.prefix_deb, 'usr/bin'), python_bin_path]
 		P.prefix_lib_dirs = [os.path.join(P.prefix, 'lib64'), os.path.join(P.prefix, 'lib'), os.path.join(P.prefix_deb, 'usr/lib'), os.path.join(P.prefix_deb, 'usr/lib/x86_64-linux-gnu')]
 		P.prefix_include_dirs = [os.path.join(P.prefix, 'include'), os.path.join(P.prefix_deb, 'usr/include'), python_include_path]
 		P.prefix_python_dirs = [python_module_path]
 		
-		P.artefact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root, python_root]
+		P.artefact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root, P.python_root]
 		P.generated_files = [P.build_script, P.wigwamfile_installed, P.activate_sh, P.activate_m]
 		P.all_dirs = [P.root] + P.artefact_dirs
 		P.repos = [P.userwigdir] + extra_repos
