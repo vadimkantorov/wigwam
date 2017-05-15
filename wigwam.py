@@ -20,12 +20,8 @@ class P:
 	wigwamdirname = '.wigwam'
 	wigwamfilename = 'Wigwamfile'
 	userwigdir = 'wigs'
-	python_prefix_schemes = [
-		('python/PREFIXSCHEME', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor)),
-		('python/HOMESCHEME', 'lib/python', 'bin', 'include/python'),
-		('python/USERSCHEME', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
-	] # https://docs.python.org/2/install/
-
+	python_prefix_scheme = ('python', 'lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
+	
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
 		P.root = root
@@ -45,28 +41,17 @@ class P:
 		P.build_script = p('build.generated.sh')
 		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
 		
-		P.artifact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root]
-
-		P.generated_files = [P.build_script, P.wigwamfile_installed, P.activate_sh, P.activate_m]
-
-		P.all_dirs = [P.root] + P.artifact_dirs
-
-		P.prefix_bin_dirs = [os.path.join(P.prefix, 'bin'), os.path.join(P.prefix_deb, 'usr/bin')]
-		P.prefix_lib_dirs = [os.path.join(P.prefix, 'lib64'), os.path.join(P.prefix, 'lib'), os.path.join(P.prefix_deb, 'usr/lib'), os.path.join(P.prefix_deb, 'usr/lib/x86_64-linux-gnu')]
-		P.prefix_include_dirs = [os.path.join(P.prefix, 'include'), os.path.join(P.prefix_deb, 'usr/include')]
-		P.prefix_python_dirs = []
 		
-		for root_relative_path, module_path, bin_path, include_path in P.python_prefix_schemes:
-			root_full_path = os.path.join(P.prefix, root_relative_path)
-			module_full_path = os.path.join(root_full_path, module_path)
-			bin_path = os.path.join(root_full_path, bin_path)
-			include_full_path = os.path.join(root_full_path, include_path)
-			
-			P.prefix_python_dirs += [module_full_path]
-			P.artifact_dirs += [root_full_path]
-			P.all_dirs += [module_full_path, bin_path, include_full_path]
-			P.prefix_bin_dirs += [bin_path]
-
+		python_root = os.path.join(P.prefix, P.python_prefix_scheme[0])
+		python_module_path,  python_bin_path, python_include_path = [os.path.join(python_root, path_component) for path_component in P.python_prefix_scheme]
+		P.prefix_bin_dirs = [os.path.join(P.prefix, 'bin'), os.path.join(P.prefix_deb, 'usr/bin'), python_bin_path]
+		P.prefix_lib_dirs = [os.path.join(P.prefix, 'lib64'), os.path.join(P.prefix, 'lib'), os.path.join(P.prefix_deb, 'usr/lib'), os.path.join(P.prefix_deb, 'usr/lib/x86_64-linux-gnu')]
+		P.prefix_include_dirs = [os.path.join(P.prefix, 'include'), os.path.join(P.prefix_deb, 'usr/include'), python_include_path]
+		P.prefix_python_dirs = [python_module_path]
+		
+		P.artefact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.prefix_deb, P.debug_root, python_root]
+		P.generated_files = [P.build_script, P.wigwamfile_installed, P.activate_sh, P.activate_m]
+		P.all_dirs = [P.root] + P.artefact_dirs
 		P.repos = [P.userwigdir] + extra_repos
 
 		P.log_base = staticmethod(lambda wig_name: os.path.join(P.log_root, wig_name))
@@ -101,12 +86,7 @@ class S:
 	MATLABPATH = 'MATLABPATH'
 	DESTDIR = 'DESTDIR'
 	CMAKE_PREFIX_PATH = 'CMAKE_PREFIX_PATH'
-	PREFIX_PYTHON_PREFIXSCHEME = '$PREFIX/python/PREFIXSCHEME'
-	PREFIX_PYTHON_HOMESCHEME = '$PREFIX/python/HOMESCHEME'
-	PREFIX_PYTHON_USERSCHEME = '$PREFIX/python/USERSCHEME'
-	PYTHON_DEFAULT_MODULE_PATH = os.path.join('$PREFIX', P.python_prefix_schemes[0][0], P.python_prefix_schemes[0][1])
-	PYTHON_DEFAULT_BIN_PATH = os.path.join('$PREFIX', P.python_prefix_schemes[0][0], P.python_prefix_schemes[0][2])
-	PYTHON_DEFAULT_INCLUDE_PATH = os.path.join('$PREFIX', P.python_prefix_schemes[0][0], P.python_prefix_schemes[0][3])
+	PREFIX_PYTHON = '$PREFIX/python'
 	PREFIX_CONFIGURE_FLAG = '--prefix="$PREFIX"'
 	prefix_MAKE_INSTALL_FLAG = 'prefix="$PREFIX"'
 	PREFIX_MAKE_INSTALL_FLAG = 'PREFIX="$PREFIX"'
@@ -130,7 +110,7 @@ class S:
 	make = staticmethod(lambda flags: 'make %s' % ' '.join(flags))
 	makeflags = staticmethod(lambda flags: '%s="%s %s"' % (S.MAKEFLAGS, ' '.join(flags), os.environ.get(S.MAKEFLAGS, '')) if flags else '')
 	make_install = staticmethod(lambda flags: 'make install %s' % ' '.join(flags))
-	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON_PREFIXSCHEME
+	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON
 	ln = staticmethod('ln -f -s "{}" "{}"'.format)
 	qq = staticmethod('"{0}"'.format)
 	rm_rf = staticmethod(lambda *args: 'rm -rf %s' % ' '.join(map(S.qq, args)))
@@ -455,7 +435,7 @@ class PipWig(Wig):
 		#self.require('pip')
 
 	def gen_install_snippet(self):
-		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON_USERSCHEME), '"%s" install --force-reinstall --ignore-installed --user %s' % (PipWig.PIP_PATH, self.name[len('pip-'):])]
+		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"%s" install --force-reinstall --ignore-installed --user %s' % (PipWig.PIP_PATH, self.name[len('pip-'):])]
 
 class DictConfig(dict):
 	@staticmethod
@@ -747,7 +727,7 @@ def status(verbose):
 
 def clean(wigwamfile, dangerous):
 	assert not wigwamfile or dangerous
-	for d in P.artifact_dirs:
+	for d in P.artefact_dirs:
 		if os.path.exists(d):
 			try:
 				shutil.rmtree(d)
