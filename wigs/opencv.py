@@ -19,7 +19,7 @@ class opencv(CmakeWig):
 		self.before_configure += [S.export(S.PKG_CONFIG_PATH, "$PREFIX/lib/pkgconfig")]
 
 	def switch_python_on(self):
-		self.cmake_flags += ['-DPYTHON2_PACKAGES_PATH="%s"' % os.path.join(P.python_root, P.python_prefix_scheme[0])]
+		self.cmake_flags += ['-DPYTHON2_PACKAGES_PATH="%s"' % os.path.join(P.prefix_python, P.python_prefix_scheme[0])]
 		self.require('numpy')
 		self.switch('python2', True)
 	
