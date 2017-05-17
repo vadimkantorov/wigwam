@@ -789,23 +789,16 @@ def search(wig_name, output_json):
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
-def enter(dry, verbose):
+def run(dry, verbose, cmds = []):
 	if os.path.exists(P.activate_sh):
+		cmd = ('''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))) if cmds else ('''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh))
 		if dry:
-			print 'The activate shell script is located at [%s]. Contents:' % P.activate_sh
-			print ''
-			with open(P.activate_sh, 'r') as f:
-				print f.read()
+			print cmd
+			print '# %s:' % P.activate_sh
+			for line in open(P.activate_sh, 'r'):
+				print '# ' + line[:-1]
 		else:
-			cmd = '''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh)
 			subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
-	else:
-		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
-
-def run(cmds, verbose):
-	if os.path.exists(P.activate_sh):
-		cmd = '''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))
-		subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 	else:
 		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
@@ -1019,9 +1012,15 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = init)
 	
 	cmd = subparsers.add_parser('in')
-	cmd.set_defaults(func = enter)
+	cmd.set_defaults(func = run)
 	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
+	
+	cmd = subparsers.add_parser('run')
+	cmd.set_defaults(func = run)
+	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
+	cmd.add_argument('cmds', nargs = argparse.REMAINDER)
 	
 	cmd = subparsers.add_parser('status')
 	cmd.set_defaults(func = status)
@@ -1059,11 +1058,6 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = search)
 	cmd.add_argument('wig_name', default = None, nargs = '?')
 	cmd.add_argument('--json', action = 'store_true', dest = 'output_json')
-
-	cmd = subparsers.add_parser('run')
-	cmd.set_defaults(func = run)
-	cmd.add_argument('--verbose', action = 'store_true')
-	cmd.add_argument('cmds', nargs = argparse.REMAINDER)
 	
 	cmd = subparsers.add_parser('upgrade')
 	cmd.set_defaults(func = upgrade)
