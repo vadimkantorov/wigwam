@@ -9,7 +9,8 @@ For installation instructions please check http://wigwam.in.
   * ```wigwam install packagename --disable feature1 feature2 --git development``` - forces install from git branch `development` with disabled `feature1` and `feature2`
  - ```wigwam in``` - executes ```.wigwam/wigwam_activate.sh``` and makes available the installed binaries and libraries
  - ```wigwam build``` - fetches and builds all dependencies specified in the ```Wigwamfile```
- - ```wigwam clean```
+ - ```wigwam status``` - lists installed packages
+ - ```wigwam clean``` - removes all installed packages
  
 # Updating wig list on the website
 ```bash
