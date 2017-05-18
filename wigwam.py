@@ -702,8 +702,8 @@ def remove(wig_names, dangerous):
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
 	
-def path(file):
-	print os.path.abspath(P.wigwamfile) if file == 'wigwamfile' else os.path.abspath(P.activate_sh) if file == 'activate' else os.path.dirname(P.root)
+def which(wigwamfile):
+	print os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root)
 
 def status(verbose):
 	init()
@@ -1071,9 +1071,9 @@ if __name__ == '__main__':
 	cmd.add_argument('wig_names', nargs = '+')
 	cmd.add_argument('--dangerous', action = 'store_true')
 	
-	cmd = subparsers.add_parser('path')
-	cmd.add_argument('file', nargs = '?', choices = ['wigwamfile', 'activate'])
-	cmd.set_defaults(func = path)
+	cmd = subparsers.add_parser('which')
+	cmd.add_argument('--wigwamfile', action = 'store_true')
+	cmd.set_defaults(func = which)
 
 	args = vars(parser.parse_args())
 	cmd, use_global, extra_repos, arg_root = args.pop('func'), args.pop('global'), args.pop('repo'), args.pop('root')
