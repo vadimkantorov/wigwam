@@ -12,6 +12,7 @@ For installation instructions please check http://wigwam.in.
  - ```wigwam status``` - lists installed packages
  - ```wigwam remove packagename --dangerous``` - removes ONLY the reference from Wigwamfile
  - ```wigwam clean``` - removes all installed packages
+ - ```wigwam which````- prints the path to `.wigwam` directory
  
 # Updating wig list on the website
 ```bash
