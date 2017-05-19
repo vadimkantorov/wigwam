@@ -264,7 +264,7 @@ class Wig:
 		return refs[0][:7]
 
 	def compute_release_url(self, source_version):
-		return self.tarball_uri.replace('$RELEASE_VERSION$', source_version.lstrip('v'))
+		return self.tarball_uri.format(RELEASE_VERSION = source_version)
 
 	def gen_configure_snippet(self):
 		return S.configure(self.configure_flags)
@@ -403,7 +403,7 @@ class DebWig(Wig):
 			self.skip(*Wig.all_installation_stages)
 
 	def find_last_release_version(self):
-		return 'v1.0'
+		return '1.0'
 
 	def configure_with_dict_config(self, *args):
 		self.source_fetcher.clues = {W.URI : ', '.join(self.deb_uris), W.VERSION: self.find_last_release_version()}
@@ -619,7 +619,7 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 		if enable + disable:
 			dict_config.update({'features' : ' '.join([char + feature for features, char in zip([enable, disable], ['+', '-']) for feature in features])})
 		if git or version:
-			dict_config.update({'sources' : 'v' + version if version else 'git' + (' ' + git if git != True else '')})
+			dict_config.update({'sources' : version if version else 'git' + (' ' + git if git != True else '')})
 
 		end = end.patch({ wig_name : dict_config })
 	end.save(P.wigwamfile)

@@ -1,7 +1,7 @@
 class openssl(Wig):
-	tarball_uri = 'https://github.com/openssl/openssl/archive/OpenSSL_$RELEASE_VERSION$.tar.gz'
+	tarball_uri = 'https://github.com/openssl/openssl/archive/OpenSSL_{RELEASE_VERSION}.tar.gz'
 	git_uri = 'https://github.com/openssl/openssl'
-	last_release_version = 'v1_1_0e'
+	last_release_version = '1_1_0e'
 	
 
 	def setup(self):

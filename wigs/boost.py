@@ -3,7 +3,7 @@ class boost(Wig):
 	git_uri = 'https://github.com/boostorg/boost'
 	git_branch = 'boost-1.59.0'
 	git_init_submodules = True
-	last_release_version = 'v1.59.0'
+	last_release_version = '1.59.0'
 	supported_features = ['python']
 	default_features = ['-python']
 	

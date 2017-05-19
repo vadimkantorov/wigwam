@@ -1,7 +1,7 @@
 class vlfeat(Wig):
-	tarball_uri = 'https://github.com/vlfeat/vlfeat/archive/v$RELEASE_VERSION$.tar.gz'
+	tarball_uri = 'https://github.com/vlfeat/vlfeat/archive/v{RELEASE_VERSION}.tar.gz'
 	git_uri = 'https://github.com/vlfeat/vlfeat'
-	last_release_version = 'v0.9.20'
+	last_release_version = '0.9.20'
 	config_access = ['PATH_TO_MATLAB']
 
 	def setup(self):

@@ -1,7 +1,7 @@
 class atlas(Wig):
-	tarball_uri = 'http://downloads.sourceforge.net/project/math-atlas/Stable/$RELEASE_VERSION$/atlas$RELEASE_VERSION$.tar.bz2'
+	tarball_uri = 'http://downloads.sourceforge.net/project/math-atlas/Stable/{RELEASE_VERSION}/atlas{RELEASE_VERSION}.tar.bz2'
 	tar_strip_components = 1
-	last_release_version = 'v3.10.2'
+	last_release_version = '3.10.2'
 	supported_features = ['threads', 'lapack']
 	default_features = ['+lapack']
 

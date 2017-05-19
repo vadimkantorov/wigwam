@@ -1,6 +1,6 @@
 class yael(Wig):
-	tarball_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v$RELEASE_VERSION$.tar.gz'
-	last_release_version = 'v438'
+	tarball_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v{RELEASE_VERSION}.tar.gz'
+	last_release_version = '438'
 	supported_features = ['python', 'atlas']
 	optional_dependencies = ['atlas', 'swig']
 

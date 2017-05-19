@@ -40,7 +40,6 @@ sudo tar -xzf cudnn-8.0-linux-x64-v5.1.tgz -C /usr/local
  - loading Wigwamfile.installed should not break if a newly added default feature is not configured properly
  - Wigwamfile should list installed features
  - if wigwam_activate.sh changed, suggest exiting a wigwam session and entering again to reload wigwam
- - remove v* prefix from versions
  - when adding symlinks to the library, also add symlink to the actual library (some software will link against the final library, not the symlinked .so)
  
 # wigs

@@ -1,6 +1,6 @@
 class ncurses(Wig):
-	tarball_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-$RELEASE_VERSION$.tar.gz'
-	last_release_version = 'v6.0'
+	tarball_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{RELEASE_VERSION}.tar.gz'
+	last_release_version = '6.0'
 
 	def setup(self):
 		self.configure_flags += ['--enable-overwrite']
