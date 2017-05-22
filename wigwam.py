@@ -610,7 +610,7 @@ def lint(old = None):
 def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, dangerous, verbose):
 	init()
 
-	assert (not only) or (only and dangerous)
+	assert not only or dangerous
 	
 	old = DictConfig.read(P.wigwamfile)
 	end = old.patch({W.CONFIG : dict(map(lambda x: x.split('='), config))})
@@ -629,7 +629,7 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 def upgrade(wig_names, dry, only, dangerous):
 	init()
 
-	assert (not only) or (only and dangerous)
+	assert not only or dangerous
 
 	old = DictConfig.read(P.wigwamfile)
 	end = old.clone()
