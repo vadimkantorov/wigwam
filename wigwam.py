@@ -726,20 +726,14 @@ def status(verbose):
 
 def clean(wigwamfile, dangerous):
 	assert not wigwamfile or dangerous
-	for d in P.artefact_dirs:
-		if os.path.exists(d):
-			try:
-				shutil.rmtree(d)
-			except:
-				print 'shutil.rmtree(%s) failed. Waiting 1 sec and trying one more time.' % repr(d)
-				time.sleep(1)
-				shutil.rmtree(d)
-				
-			os.makedirs(d)
-
+	
 	for f in P.generated_files + ([P.wigwamfile] if wigwamfile else []):
 		if os.path.exists(f):
 			os.remove(f)
+
+	for d in P.artefact_dirs:
+		if os.path.exists(d):
+			shutil.rmtree(d)
 
 def init(wigwamfile = None):
 	for d in P.all_dirs:
