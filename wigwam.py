@@ -741,8 +741,7 @@ def init(wigwamfile = None):
 				json.dump(json.loads(filler), f)
 
 def log(wig_name, fetch = False, configure = False, make = False, install = False):
-	arg_stages = locals()
-	stages = filter(lambda stage: arg_stages[stage] == True, Wig.all_installation_stages) or Wig.all_installation_stages
+	stages = filter(locals().get, Wig.all_installation_stages) or Wig.all_installation_stages
 	paths = ['"%s.txt"' % os.path.join(P.log_base(wig_name), stage) for stage in stages]
 	subprocess.call('cat %s | less' % ' '.join(paths), shell = True)
 
