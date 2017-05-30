@@ -174,7 +174,7 @@ class SourceFetcher:
 		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_git(self.clues[W.URI], target_dir, init_submodules = self.clues[W.GIT_INIT_SUBMODULES], tag = self.clues.get(W.GIT_COMMIT) or self.clues.get(W.GIT_BRANCH))
 
 	def make_gen_snippet_tarball(self, wig, sources):
-		version = sources.strip() or wig.last_release_version or wig.find_last_release_version()
+		version = sources.strip() or wig.last_release_version
 		self.clues.update({W.URI : wig.compute_release_url(version), W.VERSION : version, W.TAR_STRIP_COMPONENTS : wig.tar_strip_components if wig.tar_strip_components != None else 1})
 		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_tarball(self.clues[W.URI], target_dir, strip_components = self.clues[W.TAR_STRIP_COMPONENTS])
 
@@ -241,7 +241,7 @@ class Wig:
 
 	def default_dict_config(self):
 		if self.sources == 'tarball':
-			return {W.SOURCES : 'tarball ' + (self.last_release_version or self.find_last_release_version()) }
+			return {W.SOURCES : 'tarball ' + self.last_release_version }
 		elif self.sources == 'git':
 			return {W.SOURCES : ('git %s' % (self.git_commit or self.find_last_git_commit())) + ('@%s' % self.git_branch if self.git_branch else '')}
 		else:
@@ -252,9 +252,6 @@ class Wig:
 	
 	def switch(self, feat_name, on):
 		pass
-
-	def find_last_release_version(self):
-		return None
 
 	def find_last_git_commit(self):
 		branch = self.git_branch or 'HEAD'
@@ -398,15 +395,13 @@ class DebWig(Wig):
 		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
 		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
 		self.sources = (self.deb_uris + [''])[0]
+		self.last_release_version = '1.0'
 	
 		if len(self.deb_uris) == 0:
 			self.skip(*Wig.all_installation_stages)
 
-	def find_last_release_version(self):
-		return '1.0'
-
 	def configure_with_dict_config(self, *args):
-		self.source_fetcher.clues = {W.URI : ', '.join(self.deb_uris), W.VERSION: self.find_last_release_version()}
+		self.source_fetcher.clues = {W.URI : ', '.join(self.deb_uris), W.VERSION: self.last_release_version}
 	
 	def gen_fetch_snippet(self):
 		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
