@@ -48,7 +48,7 @@ class P:
 		P.prefix_include_dirs = [os.path.join(P.prefix, 'include'), os.path.join(P.prefix_deb, 'usr/include'), python_include_path]
 		P.prefix_python_dirs = [python_module_path]
 		
-		P.artefact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.debug_root]
+		P.artefact_dirs = [P.src_tree, P.prefix, P.log_root, P.tar_root, P.deb_root, P.debug_root] + [python_module_path, python_bin_path, python_include_path]
 		P.generated_files = [P.build_script, P.wigwamfile_installed, P.activate_sh, P.activate_m]
 		P.all_dirs = [P.root] + P.artefact_dirs
 		P.repos = [P.userwigdir] + extra_repos
