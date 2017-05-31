@@ -9,7 +9,7 @@ class bazel(Wig):
 	
 	def gen_fetch_snippet(self):
 		uri = self.raw_uri.format(RELEASE_VERSION = self.last_release_version)
-		return [S.mkdir_p(self.paths.src_dir), S.download(uri, os.path.join(self.paths.src_dir, uri))]
+		return [S.mkdir_p(self.paths.src_dir), S.download(uri, os.path.join(self.paths.src_dir, os.path.basename(uri)))]
 	
 	def gen_install_snippet(self):
 		return [S.export('HOME', '$PREFIX'), 'bash bazel-*-installer*.sh --user']
