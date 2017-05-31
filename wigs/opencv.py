@@ -1,11 +1,11 @@
 class opencv(CmakeWig):
 	tarball_uri = 'https://github.com/itseez/opencv/archive/{RELEASE_VERSION}.tar.gz'
-	last_release_version ='3.2.0'
+	last_release_version = '3.2.0'
 	git_uri = 'https://github.com/itseez/opencv'
 	dependencies = ['pkg-config']
 	optional_dependencies = ['ffmpeg', 'opencv_contrib', 'numpy']
 	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg', 'contrib', 'ipp']
-	default_features = ['+shared', '-tests', '-examples', '-cuda', '+python', '+ffmpeg', '-ipp']
+	default_features = ['+shared', '-tests', '-examples', '-cuda', '-python', '+ffmpeg', '-ipp']
 
 	def switch_ipp(self, on):
 		self.cmake_flags += ['-DWITH_IPP=%s' % S.ONOFF(on)]
