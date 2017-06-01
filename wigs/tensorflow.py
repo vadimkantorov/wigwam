@@ -35,4 +35,4 @@ class tensorflow(PipWig):
 			self.before_configure += [S.export('TF_NEED_CUDA', 0)]
 		
 	def gen_make_snippet(self):
-		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package build']
+		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package "$PWD/build"']
