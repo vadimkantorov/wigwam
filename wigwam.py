@@ -698,6 +698,11 @@ def remove(wig_names, dangerous):
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
 	
+	for wig_name in wig_names:
+		src_dir = os.path.join(P.src_tree, wig_name)
+		if os.path.exists(src_dir):
+			shutil.rmtree(src_dir)
+	
 def which(wigwamfile):
 	print os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root)
 
