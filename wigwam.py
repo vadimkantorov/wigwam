@@ -681,18 +681,15 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 	else:
 		print 'Dry run. Quitting.'
 
-def remove(wig_names, dangerous):
+def remove(wig_names):
 	init()
 	
 	requested = DictConfig.read(P.wigwamfile)
 	installed = DictConfig.read(P.wigwamfile_installed)
 	
-	wigs_to_remove_dangerously = filter(lambda wig_name: wig_name in installed, wig_names)
-	if wigs_to_remove_dangerously and not dangerous:
-		print 'Wigs %s are already installed. Use --dangerous.' % repr(wigs_to_remove_dangerously)
-		return
-	
 	for wig_name in wig_names:
+		if wig_name in installed:
+			print 'Package [%s] is already installed to the prefix, artefacts will not be removed.'
 		requested.pop(wig_name, None)
 		installed.pop(wig_name, None)
 		src_dir = os.path.join(P.src_tree, wig_name)
