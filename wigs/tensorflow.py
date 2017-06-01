@@ -3,16 +3,25 @@ class tensorflow(Wig):
 	tarball_uri = 'https://github.com/tensorflow/tensorflow/archive/v{RELEASE_VERSION}.tar.gz'
 	last_release_version = '1.0.1'
 	dependencies = ['bazel', 'pip', 'numpy']
+	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	
 	def setup(self):
-		self.before_configure += [S.export('PYTHON_BIN_PATH', '$(which python)'),
+		self.before_configure += [
+			S.export('GCC_HOST_COMPILER_PATH', '$(which gcc)'),
 			S.export('CC_OPT_FLAGS', '-march=default'),
+			S.export('PYTHON_BIN_PATH', '$(which python)'),
+			S.export('USE_DEFAULT_PYTHON_LIB_PATH', 1),
+			
 			S.export('TF_NEED_JEMALLOC', 0),
 			S.export('TF_NEED_GCP', 0),
 			S.export('TF_NEED_HDFS', 0),
-			S.export('TF_ENABLE_XLA', 1),
-			S.export('USE_DEFAULT_PYTHON_LIB_PATH', 1),
 			S.export('TF_NEED_OPENCL', 0),
+			S.export('TF_ENABLE_XLA', 1),
+			
 			S.export('TF_NEED_CUDA', 1),
-			S.export('GCC_HOST_COMPILER_PATH', '$(which gcc)')
+			#export TF_CUDA_VERSION=8.0
+			#export TF_CUDNN_VERSION=5
+			S.export('CUDNN_TOOLKIT_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_NVCC'))),
+			S.export('CUDNN_INSTALL_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))),
+			S.export('TF_CUDA_COMPUTE_CAPABILITIES', '3.5,5.2')
     		]
