@@ -10,5 +10,9 @@ class tensorflow(Wig):
 			S.export('TF_NEED_JEMALLOC', 0),
 			S.export('TF_NEED_GCP', 0),
 			S.export('TF_NEED_HDFS', 0),
-			S.export('TF_ENABLE_XLA', 1)
-		]
+			S.export('TF_ENABLE_XLA', 1),
+			S.export('USE_DEFAULT_PYTHON_LIB_PATH', 1),
+			S.export('TF_NEED_OPENCL', 0),
+			S.export('TF_NEED_CUDA', 1),
+			S.export('GCC_HOST_COMPILER_PATH', '$(which gcc)')
+    		]
