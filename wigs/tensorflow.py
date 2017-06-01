@@ -10,7 +10,7 @@ class tensorflow(PipWig):
 	def setup(self):
 		self.before_configure += [
 			S.export('GCC_HOST_COMPILER_PATH', '$(which gcc)'),
-			S.export('CC_OPT_FLAGS', '-march=default'),
+			S.export('CC_OPT_FLAGS', '-march=native'),
 			S.export('PYTHON_BIN_PATH', '$(which python)'),
 			S.export('USE_DEFAULT_PYTHON_LIB_PATH', 1),
 			S.export('TF_NEED_JEMALLOC', 0),
