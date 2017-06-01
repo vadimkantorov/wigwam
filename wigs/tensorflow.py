@@ -29,7 +29,7 @@ class tensorflow(PipWig):
 				S.export('CUDNN_TOOLKIT_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_NVCC'))),
 				S.export('CUDNN_INSTALL_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))),
 				S.export('TF_CUDA_VERSION', '8.0'),
-				S.export('TF_CUDNN_VERSION', 5),
+				S.export('TF_CUDNN_VERSION', 5)
 			]
 		else:
 			self.before_configure += [S.export('TF_NEED_CUDA', 0)]
