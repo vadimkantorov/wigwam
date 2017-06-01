@@ -17,7 +17,7 @@ class tensorflow(PipWig):
 			S.export('TF_NEED_GCP', 0),
 			S.export('TF_NEED_HDFS', 0),
 			S.export('TF_NEED_OPENCL', 0),
-			S.export('TF_ENABLE_XLA', 1),
+			S.export('TF_ENABLE_XLA', 1)
 		]
 		self.wheel_path = 'tensorflow_pkg/tensorflow-*.whl'
 		
