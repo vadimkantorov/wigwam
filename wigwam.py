@@ -721,9 +721,7 @@ def status(verbose):
 		uri = '' if is_conflicted else (installed[wig_name][W.URI] if W.URI in installed[wig_name] else 'N/A')
 		print fmt % ('*' if is_installed else '', wig_name, version, uri)
 
-def clean(wigwamfile, dangerous):
-	assert not wigwamfile or dangerous
-	
+def clean(wigwamfile):
 	for f in P.generated_files + ([P.wigwamfile] if wigwamfile else []):
 		if os.path.exists(f):
 			os.remove(f)
@@ -992,7 +990,6 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('clean')
 	cmd.add_argument('--wigwamfile', action = 'store_true')
-	cmd.add_argument('--dangerous', action = 'store_true')
 	cmd.set_defaults(func = clean)
 	
 	subparsers.add_parser('lint').set_defaults(func = lint)
@@ -1059,7 +1056,6 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
 	cmd.add_argument('wig_names', nargs = '+')
-	cmd.add_argument('--dangerous', action = 'store_true')
 	
 	cmd = subparsers.add_parser('which')
 	cmd.add_argument('--wigwamfile', action = 'store_true')
