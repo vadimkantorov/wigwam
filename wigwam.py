@@ -988,31 +988,10 @@ if __name__ == '__main__':
 	parser.add_argument('--global', action = 'store_true')
 	subparsers = parser.add_subparsers()
 	
-	cmd = subparsers.add_parser('clean')
-	cmd.add_argument('--wigwamfile', action = 'store_true')
-	cmd.set_defaults(func = clean)
-	
-	subparsers.add_parser('lint').set_defaults(func = lint)
-	
 	cmd = subparsers.add_parser('init')
 	cmd.add_argument('--wigwamfile')
 	cmd.set_defaults(func = init)
 	
-	cmd = subparsers.add_parser('in')
-	cmd.set_defaults(func = run)
-	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--verbose', action = 'store_true')
-	
-	cmd = subparsers.add_parser('run')
-	cmd.set_defaults(func = run)
-	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--verbose', action = 'store_true')
-	cmd.add_argument('cmds', nargs = argparse.REMAINDER)
-	
-	cmd = subparsers.add_parser('status')
-	cmd.set_defaults(func = status)
-	cmd.add_argument('--verbose', action = 'store_true')
-
 	cmd = subparsers.add_parser('install')
 	cmd.set_defaults(func = install)
 	cmd.add_argument('--dry', action = 'store_true')
@@ -1033,6 +1012,32 @@ if __name__ == '__main__':
 	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 
+	cmd = subparsers.add_parser('upgrade')
+	cmd.set_defaults(func = upgrade)
+	cmd.add_argument('wig_names', nargs = '*')
+	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--only', action = 'store_true')
+	cmd.add_argument('--dangerous', action = 'store_true')
+	
+	cmd = subparsers.add_parser('run')
+	cmd.set_defaults(func = run)
+	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
+	cmd.add_argument('cmds', nargs = argparse.REMAINDER)
+	
+	cmd = subparsers.add_parser('in')
+	cmd.set_defaults(func = run)
+	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
+		
+	cmd = subparsers.add_parser('which')
+	cmd.add_argument('--wigwamfile', action = 'store_true')
+	cmd.set_defaults(func = which)
+	
+	cmd = subparsers.add_parser('status')
+	cmd.set_defaults(func = status)
+	cmd.add_argument('--verbose', action = 'store_true')
+	
 	cmd = subparsers.add_parser('log')
 	cmd.set_defaults(func = log)
 	cmd.add_argument('wig_name')
@@ -1045,21 +1050,14 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = search)
 	cmd.add_argument('wig_name', default = None, nargs = '?')
 	cmd.add_argument('--json', action = 'store_true', dest = 'output_json')
-	
-	cmd = subparsers.add_parser('upgrade')
-	cmd.set_defaults(func = upgrade)
-	cmd.add_argument('wig_names', nargs = '*')
-	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--only', action = 'store_true')
-	cmd.add_argument('--dangerous', action = 'store_true')
 
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
 	cmd.add_argument('wig_names', nargs = '+')
 	
-	cmd = subparsers.add_parser('which')
+	cmd = subparsers.add_parser('clean')
 	cmd.add_argument('--wigwamfile', action = 'store_true')
-	cmd.set_defaults(func = which)
+	cmd.set_defaults(func = clean)
 
 	args = vars(parser.parse_args())
 	cmd, use_global, extra_repos, arg_root = args.pop('func'), args.pop('global'), args.pop('repo'), args.pop('root')
