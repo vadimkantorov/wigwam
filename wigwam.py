@@ -695,13 +695,12 @@ def remove(wig_names, dangerous):
 	for wig_name in wig_names:
 		requested.pop(wig_name, None)
 		installed.pop(wig_name, None)
-	requested.save(P.wigwamfile)
-	installed.save(P.wigwamfile_installed)
-	
-	for wig_name in wig_names:
 		src_dir = os.path.join(P.src_tree, wig_name)
 		if os.path.exists(src_dir):
 			shutil.rmtree(src_dir)
+			
+	requested.save(P.wigwamfile)
+	installed.save(P.wigwamfile_installed)
 	
 def which(wigwamfile):
 	print os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root)
