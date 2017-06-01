@@ -2,7 +2,7 @@ class tensorflow(PipWig):
 	git_uri = 'https://github.com/tensorflow/tensorflow'
 	tarball_uri = 'https://github.com/tensorflow/tensorflow/archive/v{RELEASE_VERSION}.tar.gz'
 	last_release_version = '1.0.1'
-	dependencies = ['bazel', 'pip', 'numpy']
+	dependencies = ['bazel', 'numpy']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
 	supported_features = ['cuda']
 	default_features = ['+cuda']
