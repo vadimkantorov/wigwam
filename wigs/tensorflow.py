@@ -19,7 +19,7 @@ class tensorflow(PipWig):
 			S.export('TF_NEED_OPENCL', 0),
 			S.export('TF_ENABLE_XLA', 1)
 		]
-		self.wheel_path = 'tensorflow_pkg/tensorflow-*.whl'
+		self.wheel_path = 'build/tensorflow-*.whl'
 		
 	def switch_cuda(self, on):
 		if on:	
@@ -35,4 +35,4 @@ class tensorflow(PipWig):
 			self.before_configure += [S.export('TF_NEED_CUDA', 0)]
 		
 	def gen_make_snippet(self):
-		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('tensorflow_pkg'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package tensorflow_pkg']
+		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package build']
