@@ -98,10 +98,10 @@ class S:
 	CD_PARENT = 'cd ..'
 	MAKEFLAGS = 'MAKEFLAGS'
 	
-	download = staticmethod(('wget {0} -O "{1}"' if subprocess.call(['which', 'wget'], stdout = subprocess.PIPE, stderr = subprocess.PIPE) == 0 else 'curl {0} -o "{1}"').format)
+	download = staticmethod(('wget {} -O "{}"' if subprocess.call(['which', 'wget'], stdout = subprocess.PIPE, stderr = subprocess.PIPE) == 0 else 'curl {} -o "{}"').format)
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
 	make_jobs = staticmethod('-j{}'.format)
-	export = staticmethod('export {0}="{1}"'.format)
+	export = staticmethod('export {}="{}"'.format)
 	export_prepend_paths = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
 	configure = staticmethod(lambda flags: './configure %s' % ' '.join(flags))
 	onoff = staticmethod({True : 'on', False : 'off'}.get)
@@ -111,7 +111,7 @@ class S:
 	make_install = staticmethod(lambda flags: 'make install %s' % ' '.join(flags))
 	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON
 	ln = staticmethod('ln -f -s "{}" "{}"'.format)
-	qq = staticmethod('"{0}"'.format)
+	qq = staticmethod('"{}"'.format)
 	rm_rf = staticmethod(lambda *args: 'rm -rf %s' % ' '.join(map(S.qq, args)))
 
 	matlab = staticmethod(lambda matlab_path, script_path: '''"%s" -nodesktop -nosplash -r "addpath('%s'); try, %s; catch exception, disp(exception); disp(exception.message); exit(1); end; exit(0)"''' % (matlab_path, os.path.dirname(script_path), os.path.splitext(os.path.basename(script_path))[0]))
