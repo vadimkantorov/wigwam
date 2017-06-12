@@ -423,11 +423,11 @@ class PythonWig(Wig):
 class PipWig(Wig):
 	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
 	wheel_path = None
-
+	sources = 'pip'
+	
 	def setup(self):
 		self.skip('fetch', 'configure', 'make')
 		#self.require('pip')
-		self.sources = 'pip'
 
 	def gen_install_snippet(self):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"%s" install --force-reinstall --ignore-installed --user %s' % (PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
