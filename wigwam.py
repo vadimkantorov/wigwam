@@ -301,7 +301,7 @@ class Wig:
 		self.env = dict_env
 		self.provision_features(dict_config.get(W.FEATURES, '').split())
 		self.sources = dict_config.get(W.SOURCES) or self.sources
-		assert self.sources != None
+		assert self.sources != None, 'sources is None: ' + self.name
 		self.source_fetcher.configure(self, self.sources)
 
 	def trace(self):
