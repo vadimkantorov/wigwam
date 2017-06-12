@@ -6,7 +6,7 @@ class openblas(Wig):
 
 	def setup(self):
 		self.skip('configure')
-		self.make_flags += ['FC=gfortran', 'NO_AFFINITY=1']
+		self.make_flags += ['FC=gfortran', 'NO_AFFINITY=1', 'NO_LAPACK=1']
 		self.make_install_flags += [S.PREFIX_MAKE_INSTALL_FLAG]
 	
 	def switch_debug_on(self):
