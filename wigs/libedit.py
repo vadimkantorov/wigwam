@@ -1,5 +1,5 @@
 class libedit(Wig):		
-	tarball_uri = 'http://thrysoee.dk/editline/libedit-{RELEASE_VERSION}.tar.gz'		
+	tar_uri = 'http://thrysoee.dk/editline/libedit-{RELEASE_VERSION}.tar.gz'		
 	last_release_version = '20160903-3.1'
 	dependencies = ['ncurses']
 			

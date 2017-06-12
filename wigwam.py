@@ -20,7 +20,7 @@ class P:
 	wigwamdirname = '.wigwam'
 	wigwamfilename = 'Wigwamfile'
 	userwigdir = 'wigs'
-	python_prefix_scheme = ('lib/python%d.%d/site-packages' % (sys.version_info.major, sys.version_info.minor), 'bin', 'include/python%d.%d' % (sys.version_info.major, sys.version_info.minor))
+	python_prefix_scheme = ('lib/python{0}.{1}/site-packages'.format(*sys.version_info), 'bin', 'include/python{0}.{1}'.format(*sys.version_info))
 	
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
@@ -56,19 +56,6 @@ class P:
 		P.log_base = staticmethod(lambda wig_name: os.path.join(P.log_root, wig_name))
 		P.debug_script = staticmethod(lambda wig_name: os.path.join(P.debug_root, wig_name + '.sh'))
 		
-class W:
-	CONFIG = '_config'
-	FEATURES = 'features'
-	SOURCES = 'sources'
-	FORMATTED_VERSION = 'formatted_version'
-	GIT_BRANCH = 'git_branch'
-	GIT_COMMIT = 'git_commit'
-	GIT_INIT_SUBMODULES = 'git_init_submodules'
-	VERSION = 'version'
-	URI = 'uri'
-	TAR_STRIP_COMPONENTS = 'tar_strip_components'
-	DEPENDS_ON = 'depends_on'
-
 class S:
 	LDFLAGS = 'LDFLAGS'
 	CFLAGS = 'CFLAGS'
@@ -103,16 +90,16 @@ class S:
 	make_jobs = staticmethod('-j{}'.format)
 	export = staticmethod('export {}="{}"'.format)
 	export_prepend_paths = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
-	configure = staticmethod(lambda flags: './configure %s' % ' '.join(flags))
+	configure = staticmethod(lambda flags: './configure {}'.format(' '.join(flags)))
 	onoff = staticmethod({True : 'on', False : 'off'}.get)
 	ONOFF = staticmethod({True : 'ON', False : 'OFF'}.get)
-	make = staticmethod(lambda flags: 'make %s' % ' '.join(flags))
-	makeflags = staticmethod(lambda flags: '%s="%s %s"' % (S.MAKEFLAGS, ' '.join(flags), os.environ.get(S.MAKEFLAGS, '')) if flags else '')
-	make_install = staticmethod(lambda flags: 'make install %s' % ' '.join(flags))
-	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON
+	make = staticmethod(lambda flags: 'make {}'.format(' '.join(flags)))
+	makeflags = staticmethod(lambda flags: '{}="{} {}"'.format(S.MAKEFLAGS, ' '.join(flags), os.getenv(S.MAKEFLAGS, '')) if flags else '')
+	make_install = staticmethod(lambda flags: 'make install {}'.format(' '.join(flags)))
+	python_setup_install = 'python setup.py install --prefix="{}"'.format(PREFIX_PYTHON)
 	ln = staticmethod('ln -f -s "{}" "{}"'.format)
 	qq = staticmethod('"{}"'.format)
-	rm_rf = staticmethod(lambda *args: 'rm -rf %s' % ' '.join(map(S.qq, args)))
+	rm_rf = staticmethod(lambda *args: 'rm -rf {}'.format(' '.join(map(S.qq, args))))
 
 	matlab = staticmethod(lambda matlab_path, script_path: '''"%s" -nodesktop -nosplash -r "addpath('%s'); try, %s; catch exception, disp(exception); disp(exception.message); exit(1); end; exit(0)"''' % (matlab_path, os.path.dirname(script_path), os.path.splitext(os.path.basename(script_path))[0]))
 
@@ -131,61 +118,6 @@ class S:
 	echo ""
 }'''
 
-	@staticmethod
-	def fetch_tarball(uri, target_dir, strip_components = 0):
-		original_file_name = uri.split('/')[-1]
-		ext = [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if original_file_name.endswith(e)]
-		assert len(ext) == 1
-		downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + ext[0])
-
-		return [S.download(uri, downloaded_file_path),
-				S.mkdir_p(target_dir),
-'tar -xf %s -C "%s"%s' % (downloaded_file_path, target_dir, ' --strip-components=%d' % strip_components),
-		]
-	
-	@staticmethod
-	def fetch_git(uri, target_dir, init_submodules = None, tag = None):
-		opts = [uri, '"%s"' % target_dir] + (['--recursive'] if init_submodules else [])
-		snippet = ['git clone %s' % ' '.join(opts)]
-		if tag != None:
-			snippet += ['cd "%s"' % target_dir, 'git checkout %s' % tag]
-		return snippet
-
-class SourceFetcher:
-	def __init__(self):
-		self.clues = {}
-
-	def make_gen_snippet_git(self, wig, sources):
-		self.clues.update({W.URI : wig.git_uri, W.GIT_INIT_SUBMODULES : wig.git_init_submodules if wig.git_init_submodules != None else False})
-		if wig.git_branch:
-			self.clues[W.GIT_BRANCH] = wig.git_branch
-		if wig.git_commit:
-			self.clues[W.GIT_COMMIT] = wig.git_commit
-
-		splitted = map(lambda x: x.strip(), sources.split('@'))
-		if len(splitted[0]) > 0:
-			if urlparse.urlparse(splitted[0]).netloc:
-				self.clues[W.URI] = splitted[0]
-			else:
-				self.clues[W.GIT_COMMIT] = splitted[0]
-		if len(splitted) > 1:
-			self.clues[W.URI] = splitted[1]
-
-		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_git(self.clues[W.URI], target_dir, init_submodules = self.clues[W.GIT_INIT_SUBMODULES], tag = self.clues.get(W.GIT_COMMIT) or self.clues.get(W.GIT_BRANCH))
-
-	def make_gen_snippet_tarball(self, wig, sources):
-		version = sources.strip() or wig.last_release_version
-		self.clues.update({W.URI : wig.compute_release_url(version), W.VERSION : version, W.TAR_STRIP_COMPONENTS : wig.tar_strip_components if wig.tar_strip_components != None else 1})
-		return lambda target_dir: [S.rm_rf(target_dir)] + S.fetch_tarball(self.clues[W.URI], target_dir, strip_components = self.clues[W.TAR_STRIP_COMPONENTS])
-
-	def configure(self, wig, sources):
-		if sources.startswith('git'):
-			self.gen_snippet = self.make_gen_snippet_git(wig, sources[len('git'):])
-		elif sources.startswith('tarball'):
-			self.gen_snippet = self.make_gen_snippet_tarball(wig, sources[len('tarball'):])
-		else:
-			self.gen_snippet = lambda target_dir: None
-
 class Wig:
 	git_branch = None
 	git_commit = None
@@ -193,7 +125,7 @@ class Wig:
 	tar_strip_components = None
 	working_directory = '.'
 	matlab_root = None
-	sources = None
+	fetch_method = None
 
 	config_access = []
 	dependencies = []
@@ -202,7 +134,7 @@ class Wig:
 	default_features = []
 	last_release_version = None
 
-	all_installation_stages = ['fetch', 'configure', 'make', 'install']
+	all_installation_stages = ['fetch', 'configure', 'build', 'install']
 	
 	def __init__(self, name):
 		self.name = name
@@ -231,51 +163,63 @@ class Wig:
 		self.features_on_off = []
 		self.depends_on = []
 		self.skip_stages = []
-		self.sources = self.sources or ('tarball' if hasattr(self, 'tarball_uri') else 'git' if hasattr(self, 'git_uri') else None)
-		self.source_fetcher = SourceFetcher()
-
-		class WigPaths:
-			def __init__(self, wig):
-				self.src_dir = os.path.join(P.src_tree, wig.name)
-		self.paths = WigPaths(self)
+		self.fetch_method = self.fetch_method or ('tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
+		self.paths = type('', None, dict(src_dir = os.path.join(P.src_tree, wig.name)))()
 
 	def default_dict_config(self):
-		if self.sources == 'tarball':
-			return {W.SOURCES : 'tarball ' + self.last_release_version }
-		elif self.sources == 'git':
-			return {W.SOURCES : ('git %s' % (self.git_commit or self.find_last_git_commit())) + ('@%s' % self.git_branch if self.git_branch else '')}
+		if self.fetch_method == 'tar':
+			return dict(fetch_method = self.fetch_method, version = self.version)
+		elif self.fetch_method == 'git':
+			def find_last_git_commit(self):
+				branch = self.git_branch or 'HEAD'
+				refs = [commit for commit, head in map(str.split, filter(bool, subprocess.check_output(['git', 'ls-remote', self.git_uri]).split('\n'))) if branch in head]
+				return refs[0][:7]
+			return dict(fetch_method = self.fetch_method, git_commit = self.git_commit or self.find_last_git_commit(), git_branch = self.git_branch)
 		else:
 			return {}
 	
+	def configure_with_dict_config(self, dict_config, dict_env):
+		self.env = dict_env
+		self.provision_features(dict_config.get(DictConfig.ENABLED_FEATURES), dict_config.get(DictConfig.DISABLED_FEATURES))
+		self.fetch_params = dict_config.get(DictConfig.FETCH_PARAMS)
+
+	def trace(self):
+		return dict(self.fetch_params.items() + dict(depends_on = self.depends_on, enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
+	
+	def fetch(self):
+		target_dir = self.paths.src_dir
+		fetch_params = dict(self.__dict__.items() + self.fetch_params.items())
+		
+		def git(uri, git_commit = None, git_branch = None, **ignored):
+			tag = git_commit or git_branch
+			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if tag is not None else [])
+
+		def tar(uri, tar_strip_components = 1, **ignored):
+			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if uri.endswith(e)][0])
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components]
+
+		def uri(uri, **ignored):
+			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path)]
+
+		return locals()[fetch_params['method']](**fetch_params)
+	
+	def configure(self):
+		return S.configure(self.configure_flags)
+
+	def build(self):
+		return S.make(self.make_flags)
+
+	def install(self):
+		return S.make_install(self.make_install_flags) if 'install' not in self.skip_stages else []
+
 	def setup(self):
 		pass
-	
+
 	def switch(self, feat_name, on):
 		pass
 
-	def find_last_git_commit(self):
-		branch = self.git_branch or 'HEAD'
-		lines = filter(bool, subprocess.check_output(['git', 'ls-remote', self.git_uri]).split('\n'))
-		refs = [commit for commit, head in map(str.split, lines) if branch in head]
-		assert len(refs) == 1
-		return refs[0][:7]
-
-	def compute_release_url(self, source_version):
-		return self.tarball_uri.format(RELEASE_VERSION = source_version)
-
-	def gen_configure_snippet(self):
-		return S.configure(self.configure_flags)
-
-	def gen_fetch_snippet(self):
-		return self.source_fetcher.gen_snippet(self.paths.src_dir)
-
-	def gen_make_snippet(self):
-		return S.make(self.make_flags)
-
-	def gen_install_snippet(self):
-		return S.make_install(self.make_install_flags) if 'make install' not in self.skip_stages else []
-
-	def provision_features(self, extra_features_on_off):
+	def provision_features(self, enabled_features, disabled_features):
 		effective_on_off = collections.defaultdict(list)
 		features_on_off = self.features_on_off + extra_features_on_off
 		for feat in features_on_off:
@@ -283,13 +227,12 @@ class Wig:
 			effective_on_off[feat_name].append(feat[0])
 		self.features_on_off = [effective_on_off[feat_name][-1] + feat_name for feat_name in sorted(effective_on_off.keys())]
 
-	def switch_features_on_off(self):
+	def process_feature_hooks(self):
 		for feat in self.features_on_off:
 			on = feat[0] == '+'
 			feat_name = feat.lstrip('+-')
 			assert feat_name in self.supported_features, ('%s not in %s' % (feat_name, self.supported_features))
-			f1 = 'switch_%s_%s' % (feat_name, S.onoff(on))
-			f2 = 'switch_%s' % feat_name
+			f1, f2 = 'switch_%s_%s' % (feat_name, S.onoff(on)), 'switch_%s' % feat_name
 			if hasattr(self, f1):
 				getattr(self, f1)()
 			elif hasattr(self, f2):
@@ -297,27 +240,7 @@ class Wig:
 			else:
 				self.switch(feat_name, on)
 
-	def configure_with_dict_config(self, dict_config, dict_env):
-		self.env = dict_env
-		self.provision_features(dict_config.get(W.FEATURES, '').split())
-		self.sources = dict_config.get(W.SOURCES) or self.sources
-		assert self.sources != None
-		self.source_fetcher.configure(self, self.sources)
-
-	def trace(self):
-		t = {W.DEPENDS_ON : self.depends_on,
-			W.FEATURES : ' '.join(self.features_on_off),
-			W.SOURCES : self.sources or 'N/A',
-			W.FORMATTED_VERSION : ((filter(bool, self.sources or '').split()) + ['N/A'])[1]
-		}
-		t.update(self.source_fetcher.clues)
-		return t
-
-	def cfg(self, name):
-		assert name in self.config_access
-		return self.env[name]
-
-	def getcfg(self, name):
+	def getenv(self, name):
 		assert name in self.config_access
 		return self.env.get(name)
 
@@ -331,7 +254,7 @@ class Wig:
 			else:
 				self.skip_stages += [stage]
 
-	def require(self, wig_name = None, features = []):
+	def require(self, wig_name = None, enabled_features = [], disabled_feature = []):
 		if wig_name:
 			deps = self.optional_dependencies + [x[0] if isinstance(x, tuple) else x for x in self.dependencies]
 			assert wig_name in deps, 'Dependency [%s] is not found in wig.dependencies [%s] or in wig.optional_dependencies [%s]' % (wig_name, self.dependencies, self.optional_dependencies)
@@ -340,97 +263,6 @@ class Wig:
 
 		if features:
 			self.provision_features(features)
-
-class CmakeWig(Wig):
-	def __init__(self, name):
-		Wig.__init__(self, name)
-
-		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
-		self.before_make.insert(0, S.CD_BUILD)
-		self.before_install.insert(0, S.CD_BUILD)
-		self.depends_on += ['cmake']
-
-	def skip(self, stage):
-		Wig.skip(self, stage)
-		if stage == 'prefix':
-			self.cmake_flags = filter(lambda x: x is not S.CMAKE_INSTALL_PREFIX_FLAG and x is not S.CMAKE_PREFIX_PATH_FLAG, self.cmake_flags)
-		
-	def gen_configure_snippet(self):
-		return [S.MKDIR_CD_BUILD, 'cmake %s ..' % (' '.join(self.cmake_flags))]
-
-	def switch_debug(self, on):
-		self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
-
-class AutogenWig(Wig):
-	def __init__(self, name):
-		Wig.__init__(self, name)
-
-		self.before_configure += ['bash autogen.sh']
-
-class LuarocksWig(Wig):
-	LUAROCKS_PATH = '$PREFIX/bin/luarocks'
-	sources = 'luarocks'
-	rockspec_path = None
-	
-	def __init__(self, name, rockspec_path = None):
-		Wig.__init__(self, name)
-		if rockspec_path != None:
-			self.rockspec_path = rockspec_path
-		self.skip('fetch', 'configure', 'make')
-	
-	def gen_install_snippet(self):
-		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s make %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s install %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name[len('lua-'):])]
-
-class DebWig(Wig):
-	APT_GET_OUTPUT_CACHE = {}
-
-	def __init__(self, name):
-		Wig.__init__(self, name)
-
-		self.skip('make')
-		
-		if self.name not in DebWig.APT_GET_OUTPUT_CACHE:
-			DebWig.APT_GET_OUTPUT_CACHE[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name[len('deb-'):]])
-
-		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
-		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
-		self.sources = (self.deb_uris + [''])[0]
-		self.last_release_version = '1.0'
-	
-		if len(self.deb_uris) == 0:
-			self.skip(*Wig.all_installation_stages)
-
-	def configure_with_dict_config(self, *args):
-		self.source_fetcher.clues = {W.URI : ', '.join(self.deb_uris), W.VERSION: self.last_release_version}
-	
-	def gen_fetch_snippet(self):
-		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
-	
-	def gen_install_snippet(self):
-		return ['dpkg -x "%s" "%s"' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
-
-class PythonWig(Wig):
-	def __init__(self, name):
-		Wig.__init__(self, name)
-		self.skip('make')
-
-	def gen_configure_snippet(self):
-		return []
-
-	def gen_install_snippet(self):
-		return [S.python_setup_install]
-
-class PipWig(Wig):
-	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
-	wheel_path = None
-
-	def setup(self):
-		self.skip('fetch', 'configure', 'make')
-		#self.require('pip')
-		self.sources = 'pip'
-
-	def gen_install_snippet(self):
-		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"%s" install --force-reinstall --ignore-installed --user %s' % (PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
 class DictConfig(dict):
 	@staticmethod
@@ -444,17 +276,17 @@ class DictConfig(dict):
 
 	def patch(self, diff):
 		dict_config = self.clone()
-		if W.CONFIG in diff:
-			dict_config[W.CONFIG] = dict_config.get(W.CONFIG, {})
-			dict_config[W.CONFIG].update(diff.pop(W.CONFIG))
+		if DictConfig.CONFIG in diff:
+			dict_config[DictConfig.CONFIG] = dict_config.get(DictConfig.CONFIG, {})
+			dict_config[DictConfig.CONFIG].update(diff.pop(DictConfig.CONFIG))
 		for wig_name, y in diff.items():
 			if wig_name not in dict_config:
 				dict_config[wig_name] = y
 			else:
-				if W.SOURCES in y:
-					dict_config[wig_name][W.SOURCES] = y[W.SOURCES]
-				if W.FEATURES in y:
-					dict_config[wig_name][W.FEATURES] = dict_config[wig_name].get(W.FEATURES, '') + ' ' + y.get(W.FEATURES, '')
+				if DictConfig.SOURCES in y:
+					dict_config[wig_name][DictConfig.SOURCES] = y[DictConfig.SOURCES]
+				if DictConfig.FEATURES in y:
+					dict_config[wig_name][DictConfig.FEATURES] = dict_config[wig_name].get(DictConfig.FEATURES, '') + ' ' + y.get(DictConfig.FEATURES, '')
 		
 		return dict_config
 	
@@ -464,7 +296,7 @@ class DictConfig(dict):
 class WigConfig:
 	def __init__(self, dict_config):
 		dict_config = dict_config.clone()
-		self.env = dict_config.pop(W.CONFIG, {})
+		self.env = dict_config.pop(DictConfig.CONFIG, {})
 
 		self.wigs = {}
 		for wig_name, y in dict_config.items():
@@ -479,7 +311,7 @@ class WigConfig:
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs.keys():
-			self.wigs[wig_name].switch_features_on_off()
+			self.wigs[wig_name].process_feature_hooks()
 
 		flatten = lambda xs: list(itertools.chain(*xs))
 		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs.values()))
@@ -561,7 +393,7 @@ class WigConfig:
 
 	def diff(self, graph):
 		s = lambda e: set(e) if isinstance(e, list) else set([e])
-		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [W.URI, W.VERSION, W.GIT_COMMIT, W.FEATURES, W.DEPENDS_ON]))))) if w != None else set(['N/A'])
+		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [DictConfig.URI, DictConfig.VERSION, DictConfig.GIT_COMMIT, DictConfig.FEATURES, DictConfig.DEPENDS_ON]))))) if w != None else set(['N/A'])
 
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
@@ -574,34 +406,93 @@ class WigConfig:
 				to_install[wig_name] = {}
 				features_on_off = [feat for feat in wig.features_on_off if feat not in other_features_on_off]
 				if len(features_on_off) > 0:
-					to_install[wig_name][W.FEATURES] = ' '.join(features_on_off)
+					to_install[wig_name][DictConfig.FEATURES] = ' '.join(features_on_off)
 				if wig.sources != other_sources:
-					to_install[wig_name][W.SOURCES] = wig.sources
+					to_install[wig_name][DictConfig.SOURCES] = wig.sources
 			
 		return DictConfig(to_install)
 
-def lint(old = None):
-	init()
+class CmakeWig(Wig):
+	def __init__(self, name):
+		Wig.__init__(self, name)
+		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
+		self.before_make.insert(0, S.CD_BUILD)
+		self.before_install.insert(0, S.CD_BUILD)
+		self.depends_on += ['cmake']
 
-	begin = DictConfig.read(P.wigwamfile)
-	end = begin.clone()
-	if old is None:
-		old = begin
+	def skip(self, stage):
+		Wig.skip(self, stage)
+		if stage == 'prefix':
+			self.cmake_flags = filter(lambda x: x is not S.CMAKE_INSTALL_PREFIX_FLAG and x is not S.CMAKE_PREFIX_PATH_FLAG, self.cmake_flags)
+		
+	def configure(self):
+		return [S.MKDIR_CD_BUILD, 'cmake %s ..' % (' '.join(self.cmake_flags))]
 
-	while True:
-		to_install = DictConfig({wig_name : WigConfig.find_and_construct_wig(wig_name).default_dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()})
-		if len(to_install) == 0:
-			break
-		end = end.patch(to_install)
+	def switch_debug(self, on):
+		self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
-	to_install = WigConfig(end).diff(WigConfig(begin))
+class AutogenWig(Wig):
+	def __init__(self, name):
+		Wig.__init__(self, name)
+		self.before_configure += ['bash autogen.sh']
 
-	if len(to_install) > 0:
-		end = begin.patch(to_install)
-		end.save(P.wigwamfile)
-		print 'Lint reconfigured %d packages.' % len(to_install)
+class LuarocksWig(Wig):
+	LUAROCKS_PATH = '$PREFIX/bin/luarocks'
+	rockspec_path = None
+	
+	def __init__(self, name, rockspec_path = None):
+		Wig.__init__(self, name)
+		if rockspec_path != None:
+			self.rockspec_path = rockspec_path
+		self.skip('fetch', 'configure', 'build')
+	
+	def install(self):
+		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s make %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '%s %s install %s' % (S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name[len('lua-'):])]
 
-	return end
+class DebWig(Wig):
+	APT_GET_OUTPUT_CACHE = {}
+
+	def __init__(self, name):
+		Wig.__init__(self, name)
+		self.skip('build')
+		if self.name not in DebWig.APT_GET_OUTPUT_CACHE:
+			DebWig.APT_GET_OUTPUT_CACHE[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name[len('deb-'):]])
+
+		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
+		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
+		if len(self.deb_uris) == 0:
+			self.skip(*Wig.all_installation_stages)
+
+	def configure_with_dict_config(self, *ignored):
+		self.fetch_params = dict(uri = ', '.join(self.deb_uris))
+	
+	def fetch(self):
+		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
+	
+	def install(self):
+		return ['dpkg -x "%s" "%s"' % (downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
+
+class PythonWig(Wig):
+	def __init__(self, name):
+		Wig.__init__(self, name)
+		self.skip('build')
+
+	def configure(self):
+		return []
+
+	def install(self):
+		return [S.python_setup_install]
+
+class PipWig(Wig):
+	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
+	wheel_path = None
+
+	def setup(self):
+		self.skip('fetch', 'configure', 'build')
+		#self.require('pip')
+
+	def install(self):
+		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"%s" install --force-reinstall --ignore-installed --user %s' % (PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
 def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, dangerous, verbose):
 	init()
@@ -609,7 +500,7 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 	assert not only or dangerous
 	
 	old = DictConfig.read(P.wigwamfile)
-	end = old.patch({W.CONFIG : dict(map(lambda x: x.split('='), config))})
+	end = old.patch({DictConfig.CONFIG : dict(map(lambda x: x.split('='), config))})
 	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).default_dict_config()
 		if enable + disable:
@@ -631,7 +522,7 @@ def upgrade(wig_names, dry, only, dangerous):
 	end = old.clone()
 
 	if not wig_names:
-		wig_names = filter(lambda x: x != W.CONFIG, old.keys())
+		wig_names = filter(lambda x: x != DictConfig.CONFIG, old.keys())
 
 	for wig_name in wig_names:
 		if wig_name not in old:
@@ -639,15 +530,204 @@ def upgrade(wig_names, dry, only, dangerous):
 			return
 
 		dict_config = WigConfig.find_and_construct_wig(wig_name).default_dict_config()
-		if dict_config.get(W.SOURCES, None) != old[wig_name].get(W.SOURCES, None):
-			print 'Going to upgrade package [%s]: %s -> %s' % (wig_name, old[wig_name].get(W.SOURCES, None), dict_config.get(W.SOURCES, None))
-			end.patch({wig_name : {W.SOURCES : dict_config[W.SOURCES]}})
+		if dict_config.get(DictConfig.SOURCES, None) != old[wig_name].get(DictConfig.SOURCES, None):
+			print 'Going to upgrade package [%s]: %s -> %s' % (wig_name, old[wig_name].get(DictConfig.SOURCES, None), dict_config.get(DictConfig.SOURCES, None))
+			end.patch({wig_name : {DictConfig.SOURCES : dict_config[DictConfig.SOURCES]}})
 
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = only)
 
 
 def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
+	def gen_installation_script(installation_script_path, wigs, env, installation_order):
+		if os.path.exists(installation_script_path):
+			os.remove(installation_script_path)
+
+		if not installation_order:
+			return
+
+		print '%d packages to be installed in the order below:' % len(installation_order)
+		for wig_name in installation_order:
+			if wigs[wig_name].depends_on:
+				print '%10s    requires  %s' % (wig_name, ', '.join(wigs[wig_name].depends_on))
+			else:
+				print '%10s' % wig_name
+		print ''
+
+		sys.stdout.write('Updating installation script...  ')
+
+		with open(installation_script_path, 'w') as out:
+			def w(x, prepend = '', stream = out):
+				if x != []:
+					print >> stream, '\n'.join([prepend + y for y in x]) if isinstance(x, list) else prepend + x
+		
+			w('set -e') # set -evx for debugging
+			w('trap show_log EXIT')
+			w('trap on_ctrl_c SIGINT')
+			w('exec 3>&1')
+			w('source "%s"' % P.activate_sh)
+			w('TIC="$(date +%s)"')
+			w('')
+			w('''function show_log {
+		exec 1>&3
+		if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
+		then
+			printf "error!\n\n"
+			echo "Error occurred while installing [$PACKAGE_NAME]. Press <ENTER> to open [$LOG], press <ESC> to quit."
+			read -s -n1 key
+			case $key in
+				$'\e') echo Quitting;;
+				$'') less $LOG;;
+			esac
+			reset
+			exit 1
+		fi
+		exit 0
+	}
+	''')
+			w('''function on_ctrl_c {
+		exec 1>&3
+		echo "<CTRL+C> pressed. Aborting"
+		CTRLCPRESSED=1
+		reset
+		exit 1
+	}
+	''')
+			w('''function update_wigwamfile_installed {
+		python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
+	}
+	''')
+			w(S.dump_env)
+			w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
+
+			def update_wigwamfile_installed(d):
+				w('''cat <<"EOF" | update_wigwamfile_installed "%s"
+	%s
+	EOF
+	''' % (os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
+			update_wigwamfile_installed({DictConfig.CONFIG : env})
+			class Stage:
+				def __init__(self, name, file_name, skip, hook = lambda x, prepend: None):
+					self.name = name
+					self.file_name = file_name
+					self.skip = skip
+					self.hook = hook
+				
+				def __enter__(self):
+					w('printf "%%14s...  " %s' % self.name)
+					if self.skip:
+						w('echo skipped')
+						return lambda x: None
+					else:
+						w('LOG="$LOGBASE/%s"' % self.file_name)
+						w('(')
+						self.hook('(', '')
+						def inner(x):
+							w(x, '\t')
+							self.hook(x, '\t')
+						return inner
+
+				def __exit__(self, type, value, traceback):
+					if not self.skip:
+						w(') > "$LOG" 2>&1')
+						self.hook(')', '')
+						w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
+			for wig_name in installation_order:
+				wig = wigs[wig_name]
+
+				w('')
+				w('PACKAGE_NAME=%s' % wig_name)
+				w('printf "\\n$PACKAGE_NAME:\\n"')
+
+				def s(*xs):
+					return any([x in wig.skip_stages for x in xs])
+
+				if not s('all'):
+					w('cd "%s"' % P.root)
+					w('PREFIX="%s"' % P.prefix)
+					w('LOGBASE="%s"' % P.log_base(wig_name))
+					w(S.mkdir_p('$LOGBASE'))
+		
+				with Stage('Fetching', 'fetch.txt', s('all', 'fetch')) as u:
+					u(wig.before_fetch)
+					u('dump_env')
+					u(wig.fetch())
+					u(wig.after_fetch)
+				
+				debug_script_path = P.debug_script(wig_name)
+				w(S.mkdir_p(wig.paths.src_dir))
+				w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
+				with open(debug_script_path, 'w') as out_debug:
+					def d(x, prepend = ''):
+						if x != 'dump_env':
+							w(x, prepend, out_debug)
+					if not s('all', 'fetch'):
+						w('cd "%s"' % os.path.join(wig.paths.src_dir, wig.working_directory))
+						d('cd "%s"' % os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
+
+					d('''PREFIX="%s"''' % os.path.abspath(P.prefix))
+					d('source "%s"' % P.activate_sh)
+					d('')
+					d(['# ' + line for line in S.dump_env.split('\n')[1:-1]])
+					d('')
+
+					with Stage('Configuring', 'configure.txt', s('all', 'fetch', 'configure'), hook = d) as u:
+						u(wig.before_configure)
+						u('dump_env')
+						u(wig.configure())
+						u(wig.after_configure)
+
+					with Stage('Compiling', 'build.txt', s('all', 'fetch', 'build'), hook = d) as u:
+						u(wig.before_make)
+						u('dump_env')
+						u(wig.build())
+						u(wig.after_make)
+
+					with Stage('Installing', 'install.txt', s('all', 'install'), hook = d) as u:
+						u(wig.before_install)
+						u('dump_env')
+						u(wig.install())
+						u(wig.after_install)
+
+				update_wigwamfile_installed({wig_name : wig.trace()})
+			w('ALLOK=1')
+		
+		print 'ok [%s]' % installation_script_path
+
+	def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
+		with open(P.activate_sh, 'w') as out:
+			print >> out, S.export_prepend_paths(S.PATH, bin_dirs)
+			print >> out, S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs)
+			print >> out, S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs)
+			print >> out, S.export_prepend_paths(S.CPATH, include_dirs)
+			print >> out, S.export_prepend_paths(S.PYTHONPATH, python_dirs)
+			print >> out, S.export(S.WIGWAM_PREFIX, os.path.abspath(P.prefix))
+
+		with open(P.activate_m, 'w') as out:
+			for wig_name, matlab_root in matlab_dirs.items():
+				print >> out, "%s_ROOT = '%s';" % (wig_name.upper().replace('-', '_'), os.path.abspath(matlab_root))
+
+	def lint(old = None):
+		begin = DictConfig.read(P.wigwamfile)
+		end = begin.clone()
+		if old is None:
+			old = begin
+
+		while True:
+			to_install = DictConfig({wig_name : WigConfig.find_and_construct_wig(wig_name).default_dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()})
+			if len(to_install) == 0:
+				break
+			end = end.patch(to_install)
+
+		to_install = WigConfig(end).diff(WigConfig(begin))
+
+		if len(to_install) > 0:
+			end = begin.patch(to_install)
+			end.save(P.wigwamfile)
+			print 'Lint reconfigured %d packages.' % len(to_install)
+
+		return end
+
 	init()
 
 	if lint(old = old) is None:
@@ -708,7 +788,7 @@ def status(verbose):
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 
-	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][W.FORMATTED_VERSION] if wig_name in traces_dic else ''	
+	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][DictConfig.FORMATTED_VERSION] if wig_name in traces_dic else ''	
 	fmt = '%9s\t%-20s\t%-10s\t' + {True: '%s', False: '%.0s'}[verbose]
 
 	print fmt % ('INSTALLED', 'WIG_NAME', 'VERSION', 'URI')
@@ -718,10 +798,11 @@ def status(verbose):
 		is_installed = wig_name in installed
 		is_conflicted = requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
-		uri = '' if is_conflicted else (installed[wig_name][W.URI] if W.URI in installed[wig_name] else 'N/A')
+		uri = '' if is_conflicted else (installed[wig_name][DictConfig.URI] if DictConfig.URI in installed[wig_name] else 'N/A')
 		print fmt % ('*' if is_installed else '', wig_name, version, uri)
 
 def clean(wigwamfile):
+	sys.stdout.write('Removing wigwam artefacts... ')
 	for f in P.generated_files + ([P.wigwamfile] if wigwamfile else []):
 		if os.path.exists(f):
 			os.remove(f)
@@ -729,6 +810,7 @@ def clean(wigwamfile):
 	for d in P.artefact_dirs:
 		if os.path.exists(d):
 			shutil.rmtree(d)
+	print '[ok]'
 
 def init(wigwamfile = None):
 	for d in P.all_dirs:
@@ -740,14 +822,14 @@ def init(wigwamfile = None):
 			with open(wigwamfile_to_init, 'w') as f:
 				json.dump(json.loads(filler), f)
 
-def log(wig_name, fetch = False, configure = False, make = False, install = False):
+def log(wig_name, fetch = False, configure = False, build = False, install = False):
 	stages = filter(locals().get, Wig.all_installation_stages) or Wig.all_installation_stages
 	paths = ['"%s.txt"' % os.path.join(P.log_base(wig_name), stage) for stage in stages]
 	subprocess.call('cat %s | less' % ' '.join(paths), shell = True)
 
 def search(wig_name, output_json):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
-	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'supported_features' : wig.supported_features, 'config_access' : wig.config_access, 'formatted_version' : wig.trace()[W.FORMATTED_VERSION], 'uri' : wig.trace().get(W.URI, 'N/A')}
+	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'supported_features' : wig.supported_features, 'config_access' : wig.config_access, 'formatted_version' : wig.trace()[DictConfig.FORMATTED_VERSION], 'uri' : wig.trace().get(DictConfig.URI, 'N/A')}
 
 	if wig_name:
 		wig_names = [wig_name]
@@ -763,7 +845,7 @@ def search(wig_name, output_json):
 
 	def w(wig_name):
 		wig = WigConfig.find_and_construct_wig(wig_name)
-		wig.sources = wig.default_dict_config().get(W.SOURCES)
+		wig.sources = wig.default_dict_config().get(DictConfig.SOURCES)
 		wig.source_fetcher.configure(wig, wig.sources)
 		return wig
 
@@ -773,7 +855,7 @@ def search(wig_name, output_json):
 		fmt = '%-20s\t%-10s\t%s'
 		print fmt % ('WIG_NAME', 'VERSION', 'DEPENDENCIES')
 		for wig in wigs:
-			print fmt % (wig.name, wig.trace()[W.FORMATTED_VERSION], ', '.join(wig.dependencies))
+			print fmt % (wig.name, wig.trace()[DictConfig.FORMATTED_VERSION], ', '.join(wig.dependencies))
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
@@ -790,196 +872,15 @@ def run(dry, verbose, cmds = []):
 	else:
 		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
 
-def gen_installation_script(installation_script_path, wigs, env, installation_order):
-	if os.path.exists(installation_script_path):
-		os.remove(installation_script_path)
-
-	if not installation_order:
-		return
-
-	print '%d packages to be installed in the order below:' % len(installation_order)
-	for wig_name in installation_order:
-		if wigs[wig_name].depends_on:
-			print '%10s    requires  %s' % (wig_name, ', '.join(wigs[wig_name].depends_on))
-		else:
-			print '%10s' % wig_name
-	print ''
-
-	sys.stdout.write('Updating installation script...  ')
-
-	with open(installation_script_path, 'w') as out:
-		def w(x, prepend = '', stream = out):
-			if x != []:
-				print >> stream, '\n'.join([prepend + y for y in x]) if isinstance(x, list) else prepend + x
-	
-		w('set -e') # set -evx for debugging
-		w('trap show_log EXIT')
-		w('trap on_ctrl_c SIGINT')
-		w('exec 3>&1')
-		w('source "%s"' % P.activate_sh)
-		w('TIC="$(date +%s)"')
-		w('')
-		w('''function show_log {
-	exec 1>&3
-	if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
-	then
-		printf "error!\n\n"
-		echo "Error occurred while installing [$PACKAGE_NAME]. Press <ENTER> to open [$LOG], press <ESC> to quit."
-		read -s -n1 key
-		case $key in
-			$'\e') echo Quitting;;
-			$'') less $LOG;;
-		esac
-		reset
-		exit 1
-	fi
-	exit 0
-}
-''')
-		w('''function on_ctrl_c {
-	exec 1>&3
-	echo "<CTRL+C> pressed. Aborting"
-	CTRLCPRESSED=1
-	reset
-	exit 1
-}
-''')
-		w('''function update_wigwamfile_installed {
-	python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
-}
-''')
-		w(S.dump_env)
-		w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
-
-		def update_wigwamfile_installed(d):
-			w('''cat <<"EOF" | update_wigwamfile_installed "%s"
-%s
-EOF
-''' % (os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
-		update_wigwamfile_installed({W.CONFIG : env})
-		class Stage:
-			def __init__(self, name, file_name, skip, hook = lambda x, prepend: None):
-				self.name = name
-				self.file_name = file_name
-				self.skip = skip
-				self.hook = hook
-			
-			def __enter__(self):
-				w('printf "%%14s...  " %s' % self.name)
-				if self.skip:
-					w('echo skipped')
-					return lambda x: None
-				else:
-					w('LOG="$LOGBASE/%s"' % self.file_name)
-					w('(')
-					self.hook('(', '')
-					def inner(x):
-						w(x, '\t')
-						self.hook(x, '\t')
-					return inner
-
-			def __exit__(self, type, value, traceback):
-				if not self.skip:
-					w(') > "$LOG" 2>&1')
-					self.hook(')', '')
-					w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
-		for wig_name in installation_order:
-			wig = wigs[wig_name]
-
-			w('')
-			w('PACKAGE_NAME=%s' % wig_name)
-			w('printf "\\n$PACKAGE_NAME:\\n"')
-
-			def s(*xs):
-				return any([x in wig.skip_stages for x in xs])
-
-			if not s('all'):
-				w('cd "%s"' % P.root)
-				w('PREFIX="%s"' % P.prefix)
-				w('LOGBASE="%s"' % P.log_base(wig_name))
-				w(S.mkdir_p('$LOGBASE'))
-	
-			with Stage('Fetching', 'fetch.txt', s('all', 'fetch')) as u:
-				u(wig.before_fetch)
-				u('dump_env')
-				u(wig.gen_fetch_snippet())
-				u(wig.after_fetch)
-			
-			debug_script_path = P.debug_script(wig_name)
-			w(S.mkdir_p(wig.paths.src_dir))
-			w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
-			with open(debug_script_path, 'w') as out_debug:
-				def d(x, prepend = ''):
-					if x != 'dump_env':
-						w(x, prepend, out_debug)
-				if not s('all', 'fetch'):
-					w('cd "%s"' % os.path.join(wig.paths.src_dir, wig.working_directory))
-					d('cd "%s"' % os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
-
-				d('''PREFIX="%s"''' % os.path.abspath(P.prefix))
-				d('source "%s"' % P.activate_sh)
-				d('')
-				d(['# ' + line for line in S.dump_env.split('\n')[1:-1]])
-				d('')
-
-				with Stage('Configuring', 'configure.txt', s('all', 'fetch', 'configure'), hook = d) as u:
-					u(wig.before_configure)
-					u('dump_env')
-					u(wig.gen_configure_snippet())
-					u(wig.after_configure)
-
-				with Stage('Compiling', 'make.txt', s('all', 'fetch', 'make'), hook = d) as u:
-					u(wig.before_make)
-					u('dump_env')
-					u(wig.gen_make_snippet())
-					u(wig.after_make)
-
-				with Stage('Installing', 'install.txt', s('all', 'install'), hook = d) as u:
-					u(wig.before_install)
-					u('dump_env')
-					u(wig.gen_install_snippet())
-					u(wig.after_install)
-
-			update_wigwamfile_installed({wig_name : wig.trace()})
-		w('ALLOK=1')
-	
-	print 'ok [%s]' % installation_script_path
-
-def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs, matlab_dirs):
-	with open(P.activate_sh, 'w') as out:
-		print >> out, S.export_prepend_paths(S.PATH, bin_dirs)
-		print >> out, S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs)
-		print >> out, S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs)
-		print >> out, S.export_prepend_paths(S.CPATH, include_dirs)
-		print >> out, S.export_prepend_paths(S.PYTHONPATH, python_dirs)
-		print >> out, S.export(S.WIGWAM_PREFIX, os.path.abspath(P.prefix))
-
-	with open(P.activate_m, 'w') as out:
-		for wig_name, matlab_root in matlab_dirs.items():
-			print >> out, "%s_ROOT = '%s';" % (wig_name.upper().replace('-', '_'), os.path.abspath(matlab_root))
-
-def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
-	if issubclass(exc_type, KeyboardInterrupt):
-		print '<CTRL-C> pressed. Aborting.'
-		return
-
-	filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-	filename = os.path.basename(filename)
-	error = '%s: %s' % (exc_type.__name__, exc_value)
-
-	print ''
-	print 'Unhandled exception occured!'
-	print ''
-	print 'Please consider filing a bug report at %s' % P.bugreport_page
-	print 'Please paste the stack trace below into the issue.'
-	print ''
-	print '==STACK_TRACE_BEGIN=='
-	print ''
-	print ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-	print '===STACK_TRACE_END==='
-	sys.exit(1)
-
 if __name__ == '__main__':
+	def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
+		if issubclass(exc_type, KeyboardInterrupt):
+			print '<CTRL-C> pressed. Aborting.'
+			return
+
+		print 'Unhandled exception occured! Please consider filing a bug report at %s along with the stack trace below:' % P.bugreport_page
+		print ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+		sys.exit(1)
 	sys.excepthook = unhandled_exception_hook
 
 	parser = argparse.ArgumentParser(prog = 'wigwam')

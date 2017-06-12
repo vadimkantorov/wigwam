@@ -1,5 +1,5 @@
 class ncurses(Wig):
-	tarball_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{RELEASE_VERSION}.tar.gz'
 	last_release_version = '6.0'
 
 	def setup(self):

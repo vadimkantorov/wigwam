@@ -1,6 +1,6 @@
 class tensorflow(PipWig):
 	git_uri = 'https://github.com/tensorflow/tensorflow'
-	tarball_uri = 'https://github.com/tensorflow/tensorflow/archive/v{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/tensorflow/tensorflow/archive/v{RELEASE_VERSION}.tar.gz'
 	last_release_version = '1.0.1'
 	dependencies = ['bazel', 'numpy']
 	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO']
@@ -26,14 +26,14 @@ class tensorflow(PipWig):
 			self.before_configure += [
 				S.export('TF_NEED_CUDA', 1),
 				S.export('TF_CUDA_COMPUTE_CAPABILITIES', '3.5,5.2'),
-				S.export('CUDA_TOOLKIT_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_NVCC')))),
-				S.export('CUDNN_INSTALL_PATH', os.path.dirname(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')))),
+				S.export('CUDA_TOOLKIT_PATH', os.path.dirname(os.path.dirname(self.getenv('PATH_TO_NVCC')))),
+				S.export('CUDNN_INSTALL_PATH', os.path.dirname(os.path.dirname(self.getenv('PATH_TO_CUDNN_SO')))),
 				S.export('TF_CUDA_VERSION', '8.0'),
 				S.export('TF_CUDNN_VERSION', 5)
 			]
-			self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
+			self.lib_dirs += [os.path.dirname(self.getenv('PATH_TO_CUDNN_SO'))]
 		else:
 			self.before_configure += [S.export('TF_NEED_CUDA', 0)]
 		
-	def gen_make_snippet(self):
+	def build(self):
 		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package "$PWD/build"']

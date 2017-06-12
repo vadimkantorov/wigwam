@@ -1,5 +1,5 @@
 class scipy(PythonWig):
-	tarball_uri = 'https://github.com/scipy/scipy/releases/download/v{RELEASE_VERSION}/scipy-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/scipy/scipy/releases/download/v{RELEASE_VERSION}/scipy-{RELEASE_VERSION}.tar.gz'
 	last_release_version = '0.18.1'
 	git_uri = 'https://github.com/scipy/scipy'
 	dependencies = ['numpy']
@@ -23,5 +23,5 @@ class scipy(PythonWig):
 			'runtime_library_dirs = %s' % os.path.pathsep.join(lib_dirs)
 		]
 
-	def gen_configure_snippet(self):
+	def configure(self):
 		return ['cat <<- EOF > site.cfg'] + self.site_cfg + ['EOF']

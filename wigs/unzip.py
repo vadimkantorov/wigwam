@@ -1,5 +1,5 @@
 class unzip(Wig):
-	tarball_uri = 'http://downloads.sourceforge.net/infozip/unzip{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://downloads.sourceforge.net/infozip/unzip{RELEASE_VERSION}.tar.gz'
 	last_release_version = '60'
   
 	def setup(self):

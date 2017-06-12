@@ -1,5 +1,5 @@
 class ffmpeg(Wig):
-	tarball_uri = 'http://ffmpeg.org/releases/ffmpeg-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://ffmpeg.org/releases/ffmpeg-{RELEASE_VERSION}.tar.gz'
 	last_release_version = '3.1.2'
 	optional_dependencies = ['yasm', 'x264']
 	supported_features = ['yasm', 'x264']

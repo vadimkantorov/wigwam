@@ -13,7 +13,7 @@ class torch(CmakeWig):
 		pkg_name = splitted[1]
 		working_directory = os.path.join(*splitted[:2])
 		rockspec_path = os.path.join(*splitted[2:])
-		return '( cd "%s"; %s )' % (working_directory, '; '.join(LuarocksWig(pkg_name, rockspec_path).gen_install_snippet()))
+		return '( cd "%s"; %s )' % (working_directory, '; '.join(LuarocksWig(pkg_name, rockspec_path).install()))
 
 	def setup(self):
 		self.cmake_flags += ['-DWITH_LUAJIT21=ON', '-DLIBS="-lreadline -lncurses"']
@@ -57,7 +57,7 @@ class torch(CmakeWig):
 
 	def switch_cuda_on(self):
 		self.require('magma')
-		CUDA_BIN_PATH = os.path.dirname(self.cfg('PATH_TO_NVCC'))
+		CUDA_BIN_PATH = os.path.dirname(self.getenv('PATH_TO_NVCC'))
 		self.lib_dirs += [os.path.join(CUDA_BIN_PATH, '../lib64')]
 		self.after_install += [S.export('CUDA_BIN_PATH', CUDA_BIN_PATH)]
 		self.after_install += map(torch.luarocks_make, [
@@ -67,4 +67,4 @@ class torch(CmakeWig):
 		])
 
 	def switch_cudnn_on(self):
-		self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
+		self.lib_dirs += [os.path.dirname(self.getenv('PATH_TO_CUDNN_SO'))]

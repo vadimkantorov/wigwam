@@ -1,5 +1,5 @@
 class openblas(Wig):
-	tarball_uri = 'https://github.com/xianyi/OpenBLAS/archive/v{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/xianyi/OpenBLAS/archive/v{RELEASE_VERSION}.tar.gz'
 	last_release_version = '0.2.19'
 	supported_features = ['debug', 'threads']
 	default_features = ['+threads']

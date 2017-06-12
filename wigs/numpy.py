@@ -1,5 +1,5 @@
 class numpy(PythonWig):
-	tarball_uri = 'https://github.com/numpy/numpy/archive/v{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/numpy/numpy/archive/v{RELEASE_VERSION}.tar.gz'
 	last_release_version = '1.11.2'
 	git_uri = 'https://github.com/numpy/numpy'
 	dependencies = ['cython'] # 'setuptools'
@@ -22,5 +22,5 @@ class numpy(PythonWig):
 			'runtime_library_dirs = %s' % os.path.pathsep.join(lib_dirs)
 		]
 
-	def gen_configure_snippet(self):
+	def configure(self):
 		return ['cat <<- EOF > site.cfg'] + self.site_cfg + ['EOF']

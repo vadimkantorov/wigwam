@@ -1,5 +1,5 @@
 class opencv(CmakeWig):
-	tarball_uri = 'https://github.com/itseez/opencv/archive/{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/itseez/opencv/archive/{RELEASE_VERSION}.tar.gz'
 	last_release_version = '3.2.0'
 	git_uri = 'https://github.com/itseez/opencv'
 	dependencies = ['pkg-config']

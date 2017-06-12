@@ -1,5 +1,5 @@
 class readline(Wig):
-	tarball_uri = 'http://ftp.gnu.org/gnu/readline/readline-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://ftp.gnu.org/gnu/readline/readline-{RELEASE_VERSION}.tar.gz'
 	last_release_version = '6.3'
 
 	def setup(self):

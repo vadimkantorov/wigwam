@@ -41,18 +41,18 @@ class caffe(Wig):
 		self.set_makefile_config_var_commented('USE_LEVELDB', 1 if on else 0)
 		
 	def switch_cudnn_on(self):
-		self.lib_dirs += [os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))]
+		self.lib_dirs += [os.path.dirname(self.getenv('PATH_TO_CUDNN_SO'))]
 		self.set_makefile_config_var_commented('USE_CUDNN', 1)
-		self.set_makefile_config_var_uncommented('LIBRARY_DIRS', os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')))
-		self.set_makefile_config_var_uncommented('INCLUDE_DIRS', os.path.join(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')), '../include'))
+		self.set_makefile_config_var_uncommented('LIBRARY_DIRS', os.path.dirname(self.getenv('PATH_TO_CUDNN_SO')))
+		self.set_makefile_config_var_uncommented('INCLUDE_DIRS', os.path.join(os.path.dirname(self.getenv('PATH_TO_CUDNN_SO')), '../include'))
 		
 	def switch_cuda_on(self):
-		self.lib_dirs += [os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '../lib64')]
-		self.set_makefile_config_var_commented('CUDA_DIR', os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..'))
+		self.lib_dirs += [os.path.join(os.path.dirname(self.getenv('PATH_TO_NVCC')), '../lib64')]
+		self.set_makefile_config_var_commented('CUDA_DIR', os.path.join(os.path.dirname(self.getenv('PATH_TO_NVCC')), '..'))
 
 	def switch_matlab_on(self):
 		self.after_make += [S.make(self.make_flags + ['matcaffe'])]
-		self.set_makefile_config_var_commented('MATLAB_DIR', os.path.join(os.path.dirname(self.cfg('PATH_TO_MATLAB')), '..'))
+		self.set_makefile_config_var_commented('MATLAB_DIR', os.path.join(os.path.dirname(self.getenv('PATH_TO_MATLAB')), '..'))
 		
 	def switch_python_on(self):
 		self.require('skimage')
@@ -60,5 +60,5 @@ class caffe(Wig):
 		self.after_make += [S.make(self.make_flags + ['pycaffe'])]
 		self.set_makefile_config_var_commented('WITH_PYTHON_LAYER', 1)
 
-	def gen_configure_snippet(self):
+	def configure(self):
 		return ['cat Makefile.config.example %s > Makefile.config' % self.makefile_config_fixes]

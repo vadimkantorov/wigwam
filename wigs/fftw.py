@@ -1,5 +1,5 @@
 class fftw(Wig):
-	tarball_uri = 'http://www.fftw.org/fftw-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://www.fftw.org/fftw-{RELEASE_VERSION}.tar.gz'
 	last_release_version = '3.3.4'
 
 	def setup(self):

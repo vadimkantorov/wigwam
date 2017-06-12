@@ -1,5 +1,5 @@
 class atlas(Wig):
-	tarball_uri = 'http://downloads.sourceforge.net/project/math-atlas/Stable/{RELEASE_VERSION}/atlas{RELEASE_VERSION}.tar.bz2'
+	tar_uri = 'http://downloads.sourceforge.net/project/math-atlas/Stable/{RELEASE_VERSION}/atlas{RELEASE_VERSION}.tar.bz2'
 	tar_strip_components = 1
 	last_release_version = '3.10.2'
 	supported_features = ['threads', 'lapack']
@@ -8,7 +8,7 @@ class atlas(Wig):
 	def setup(self):
 		self.before_make += [S.CD_BUILD]
 
-	def gen_configure_snippet(self):
+	def configure(self):
 		return [S.MKDIR_CD_BUILD, '.' + S.configure(self.configure_flags)]
 
 	def switch_threads_off(self):
