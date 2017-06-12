@@ -12,4 +12,4 @@ class magma(Wig):
 		config_fixes += '''| sed 's$#CUDADIR ?=$CUDADIR ?= '%s'#CUDADIR ?=$' ''' % os.path.join(os.path.dirname(self.cfg('PATH_TO_NVCC')), '..')
 		config_fixes += '''| sed '$aLIB += -lm' '''
 		config_fixes += '''| sed '$aNVCC = $(CUDADIR)/bin/nvcc' '''
-		return ['cat make.inc.openblas %s > make.inc' % config_fixes]
+		return ['cat make.inc-examples/make.inc.openblas %s > make.inc' % config_fixes]
