@@ -180,29 +180,27 @@ class Wig:
 	
 	def configure_with_dict_config(self, dict_config, dict_env):
 		self.env = dict_env
-		self.provision_features(dict_config.get(DictConfig.ENABLED_FEATURES), dict_config.get(DictConfig.DISABLED_FEATURES))
-		self.fetch_params = dict_config.get(DictConfig.FETCH_PARAMS)
+		self.enabled_features += dict_config['enabled_features']
+		self.disabled_features += dict_config['disabled_features']
+		self.fetch_params = dict(self.__dict__.items() + dict_config['fetch_params'].items())
 
 	def trace(self):
-		return dict(self.fetch_params.items() + dict(depends_on = self.depends_on, enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
+		return dict(self.fetch_params.items() + dict(enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
 	
 	def fetch(self):
-		target_dir = self.paths.src_dir
-		fetch_params = dict(self.__dict__.items() + self.fetch_params.items())
-		
-		def git(uri, git_commit = None, git_branch = None, **ignored):
+		def git(target_dir, uri, git_commit = None, git_branch = None, **ignored):
 			tag = git_commit or git_branch
 			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if tag is not None else [])
 
-		def tar(uri, tar_strip_components = 1, **ignored):
+		def tar(target_dir, uri, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if uri.endswith(e)][0])
 			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components]
 
-		def uri(uri, **ignored):
+		def uri(target_dir, uri, **ignored):
 			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
 			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path)]
 
-		return locals()[fetch_params['method']](**fetch_params)
+		return locals()[fetch_params['method']](self.paths.src_dir, **self.fetch_params)
 	
 	def configure(self):
 		return S.configure(self.configure_flags)
@@ -219,18 +217,8 @@ class Wig:
 	def switch(self, feat_name, on):
 		pass
 
-	def provision_features(self, enabled_features, disabled_features):
-		effective_on_off = collections.defaultdict(list)
-		features_on_off = self.features_on_off + extra_features_on_off
-		for feat in features_on_off:
-			feat_name = feat.lstrip('+-')
-			effective_on_off[feat_name].append(feat[0])
-		self.features_on_off = [effective_on_off[feat_name][-1] + feat_name for feat_name in sorted(effective_on_off.keys())]
-
 	def process_feature_hooks(self):
-		for feat in self.features_on_off:
-			on = feat[0] == '+'
-			feat_name = feat.lstrip('+-')
+		for on, feat_name in zip(itertools.repeat(True), self.enabled_features) + zip(itertools.repeat(False), self.disabled_features):
 			assert feat_name in self.supported_features, ('%s not in %s' % (feat_name, self.supported_features))
 			f1, f2 = 'switch_%s_%s' % (feat_name, S.onoff(on)), 'switch_%s' % feat_name
 			if hasattr(self, f1):
@@ -244,25 +232,11 @@ class Wig:
 		assert name in self.config_access
 		return self.env.get(name)
 
-	def skip(self, *args):
-		for stage in args:
-			if stage == 'prefix':
-				self.configure_flags = filter(lambda x: x is not S.PREFIX_CONFIGURE_FLAG, self.configure_flags)
-			elif stage == 'make parallel':
-				self.make_flags = filter(lambda x: not x.startswith(S.make_jobs('')), self.make_flags)
-				self.make_install_flags = filter(lambda x: not x.startswith(S.make_jobs('')), self.make_install_flags)
-			else:
-				self.skip_stages += [stage]
-
-	def require(self, wig_name = None, enabled_features = [], disabled_feature = []):
-		if wig_name:
-			deps = self.optional_dependencies + [x[0] if isinstance(x, tuple) else x for x in self.dependencies]
-			assert wig_name in deps, 'Dependency [%s] is not found in wig.dependencies [%s] or in wig.optional_dependencies [%s]' % (wig_name, self.dependencies, self.optional_dependencies)
-			if wig_name not in self.depends_on:
-				self.depends_on.append(wig_name)
-
-		if features:
-			self.provision_features(features)
+	def require(self, wig_name):
+		deps = self.optional_dependencies + [x[0] if isinstance(x, tuple) else x for x in self.dependencies]
+		assert wig_name in deps, 'Dependency [%s] is not found in wig.dependencies [%s] or in wig.optional_dependencies [%s]' % (wig_name, self.dependencies, self.optional_dependencies)
+		if wig_name not in self.depends_on:
+			self.depends_on.append(wig_name)
 
 class DictConfig(dict):
 	@staticmethod
