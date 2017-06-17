@@ -8,4 +8,3 @@ class vlfeat(Wig):
 		self.skip('configure', 'make install')
 		PATH_TO_MEX = os.path.join(os.path.dirname(self.cfg('PATH_TO_MATLAB')), 'mex')
 		self.after_make += ['make MEX="%s"' % PATH_TO_MEX]
-		self.matlab('.')
