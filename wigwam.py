@@ -110,7 +110,6 @@ class Wig(object):
 	config_access = []
 	dependencies = []
 	optional_dependencies = []
-	supported_features = []
 	skip_stages = []
 
 	all_installation_stages = ['fetch', 'configure', 'build', 'install']
@@ -131,8 +130,8 @@ class Wig(object):
 		self.after_fetch = []
 		self.before_configure = []
 		self.after_configure = []
-		self.before_make = []
-		self.after_make = []
+		self.before_build = []
+		self.after_build = []
 		self.before_install = []
 		self.after_install = []
 
@@ -217,21 +216,16 @@ class DictConfig(dict):
 
 	def patch(self, diff):
 		dict_config = self.copy()
+
 		if '_config' in diff:
 			dict_config['_config'] = dict(dict_config.get('_config', {}).items() + diff.pop('_config', {}).items())
-		for wig_name, y in diff.items():
-			if wig_name not in dict_config:
-				dict_config[wig_name] = y
-			else:
-				if DictConfig.SOURCES in y:
-					dict_config[wig_name][DictConfig.SOURCES] = y[DictConfig.SOURCES]
-				if DictConfig.FEATURES in y:
-					dict_config[wig_name][DictConfig.FEATURES] = dict_config[wig_name].get(DictConfig.FEATURES, '') + ' ' + y.get(DictConfig.FEATURES, '')
-		
+		for wig_name, wig_dict_config in diff.items():
+			dict_config[wig_name] = wig_dict_config #if wig_name not in dict_config
+
 		return dict_config
 	
 	def copy(self):
-		return DictConfig(self.copy())
+		return DictConfig(dict.copy(self))
 
 class WigConfig:
 	def __init__(self, dict_config):
@@ -245,8 +239,8 @@ class WigConfig:
 			for dep_wig_name in wig.dependencies:
 				wig.require(dep_wig_name)
 			wig.setup()
-			wig.require(enabled_features = wig.enabled_features + wig_dict_config['enabled_features'])
-			wig.require(disabled_features = wig.disabled_features + wig_dict_config['disabled_features'])
+			wig.enabled_features = wig.enabled_features + wig_dict_config['enabled_features']
+			wig.disabled_features = wig.disabled_features + wig_dict_config['disabled_features']
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs.keys():
@@ -348,7 +342,7 @@ class CmakeWig(Wig):
 	def __init__(self, name):
 		Wig.__init__(self, name)
 		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
-		self.before_make = [S.CD_BUILD]
+		self.before_build = [S.CD_BUILD]
 		self.before_install = [S.CD_BUILD]
 		self.dependencies_ += ['cmake']
 
@@ -477,7 +471,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 
 		print '{} packages to be installed in the order below:'.format(len(installation_order))
 		for wig_name in installation_order:
-			print ('%10s' % wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies_)) if wigs[wig_name].dependencies_ else '')
+			print '{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies_)) if wigs[wig_name].dependencies_ else '')
 		print ''
 
 		with open(installation_script_path, 'w') as out:
@@ -584,29 +578,17 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 					d('''PREFIX="{}"'''.format(os.path.abspath(P.prefix)))
 					d('source "{}"'.format(P.activate_sh))
 					d([dump_env])
-
-					with Stage('Configuring', 'configure.txt', s('all', 'fetch', 'configure'), hook = d) as u:
-						u(wig.before_configure)
-						u('dump_env')
-						u(wig.configure())
-						u(wig.after_configure)
-
-					with Stage('Compiling', 'build.txt', s('all', 'fetch', 'build'), hook = d) as u:
-						u(wig.before_make)
-						u('dump_env')
-						u(wig.build())
-						u(wig.after_make)
-
-					with Stage('Installing', 'install.txt', s('all', 'install'), hook = d) as u:
-						u(wig.before_install)
-						u('dump_env')
-						u(wig.install())
-						u(wig.after_install)
+					for stage_name, skip_stages in [('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
+						with Stage(stage_name.capitalize().rstrip('e') + 'ing', stage_name + '.txt', s('all', *skip_stages), hook = d) as u:
+							u(getattr(wig, 'before_' + stage_name))
+							u('dump_env')
+							u(getattr(wig, stage_name)())
+							u(getattr(wig, 'after_' + stage_name)
 
 				update_wigwamfile_installed({wig_name : wig.trace()})
 			w('ALLOK=1')
 		
-		print 'ok [{}]'.format(installation_script_path)
+		print 'Installation script generated: [{}]'.format(installation_script_path)
 
 	def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs):
 		with open(P.activate_sh, 'w') as out:
@@ -630,7 +612,6 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 			end = end.patch(to_install)
 
 		to_install = WigConfig(end).diff(WigConfig(begin))
-
 		if len(to_install) > 0:
 			end = begin.patch(to_install)
 			end.save(P.wigwamfile)
@@ -693,16 +674,16 @@ def status(verbose):
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 
 	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][DictConfig.FORMATTED_VERSION] if wig_name in traces_dic else ''	
-	fmt = '%9s\t%-20s\t%-10s\t' + {True: '%s', False: '%.0s'}[verbose]
+	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + {True: '{3}', False: '{3:.0}'}[verbose]
 
-	print fmt % ('INSTALLED', 'WIG_NAME', 'VERSION', 'URI')
+	print fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI')
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
 		is_installed, is_conflicted = wig_name in installed
 		is_conflicted = requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
 		uri = '' if is_conflicted else (installed[wig_name][DictConfig.URI] if DictConfig.URI in installed[wig_name] else 'N/A')
-		print fmt % ('*' if is_installed else '', wig_name, version, uri)
+		print fmt.format('*' if is_installed else '', wig_name, version, uri)
 
 def clean(wigwamfile):
 	print 'Removing wigwam artefacts... ',
@@ -730,7 +711,7 @@ def log(wig_name, fetch, configure, build, install):
 
 def search(wig_name, print_json):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
-	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'supported_features' : wig.supported_features, 'config_access' : wig.config_access, 'formatted_version' : wig.trace()[DictConfig.FORMATTED_VERSION], 'uri' : wig.trace().get(DictConfig.URI, 'N/A')}
+	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'config_access' : wig.config_access}
 
 	if wig_name:
 		wig_names = [wig_name]
@@ -744,23 +725,18 @@ def search(wig_name, print_json):
 			else:
 				wig_names += filter_wig_names(os.listdir(repo)) if os.path.exists(repo) else []
 
-	def w(wig_name):
-		wig = WigConfig.find_and_construct_wig(wig_name)
-		return wig
-
-	wigs = map(w, sorted(set(wig_names)))
-
+	wigs = map(WigConfig.find_and_construct_wig, sorted(set(wig_names)))
 	if not print_json:
-		fmt = '%-20s\t%-10s\t%s'
-		print fmt % ('WIG_NAME', 'VERSION', 'DEPENDENCIES')
+		fmt = '{0:-20}\t{1:-10}\t{2}'
+		print fmt.format('NAME', 'VERSION', 'DEPENDENCIES')
 		for wig in wigs:
-			print fmt % (wig.name, wig.trace()[DictConfig.FORMATTED_VERSION], ', '.join(wig.dependencies))
+			print fmt.format(wig.name, 'N/A', ', '.join(wig.dependencies))
 	else:
 		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
 
 def run(dry, verbose, cmds = []):
 	if os.path.exists(P.activate_sh):
-		cmd = ('''bash --rcfile <(cat "$HOME/.bashrc"; cat "%s") -ci%s %s''' % (P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))) if cmds else ('''bash %s --rcfile <(cat "$HOME/.bashrc"; cat "%s"; echo 'export PS1="$PS1/\ $ "') -i''' % ('-xv' if verbose else '', P.activate_sh))
+		cmd = ('''bash --rcfile <(cat "$HOME/.bashrc"; cat "{}") -ci{} {}'''.format(P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))) if cmds else ('''bash {} --rcfile <(cat "$HOME/.bashrc"; cat "{}"; echo 'export PS1="$PS1/\ $ "') -i'''.format('-xv' if verbose else '', P.activate_sh))
 		if dry:
 			print cmd
 			print '# {}:'.format(P.activate_sh)
