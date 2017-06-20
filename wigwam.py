@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import time
 import json
 import pipes
 import shutil
@@ -35,7 +34,7 @@ class P:
 		P.deb_root = p('deb')
 		P.debug_root = p('debug')
 		
-		P.activate_sh = p('wigwam_activate.sh')
+		P.activate_sh = p('activate.sh')
 		P.build_script = p('build.generated.sh')
 		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
 				
@@ -258,23 +257,18 @@ class WigConfig:
 		if shortcut:
 			return shortcut[0](wig_name)
 
-		find_class = lambda: {cls.__name__ : cls for cls in globals().values() if isinstance(cls, type) and issubclass(cls, Wig) and cls != Wig}.get(wig_name.replace('-', '_'))
 		cls = None
-
 		for repo in P.repos:
-			opener = open if 'github.com' not in repo else urllib2.urlopen
 			try:
-				content = opener(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
-			except:
-				content = ''
-
-			if content and content != 'Not Found':
+				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
 				exec content in globals(), globals()
-				cls = find_class()
+				cls = globals.get(wig_name.replace('-', '_'))
 				break
+			except:
+				continue
 
-		if cls == None:
-			print 'Package [{}] cannot be found. Quitting.'.format(wig_name)
+		if cls is None:
+			print('Package [{}] is not found. Quitting.'.format(wig_name))
 			sys.exit(1)
 
 		return cls(wig_name)
@@ -391,7 +385,7 @@ class DebWig(Wig):
 		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
 	
 	def install(self):
-		return ['dpkg -x "{}" "{}"'.format(downloaded_file_path, P.prefix_deb) for downloaded_file_path in self.cached_deb_paths]
+		return ['dpkg -x "{}" "{}"'.format('" '.join(self.cached_deb_paths), P.prefix_deb)]
 
 class PythonWig(Wig):
 	skip_stages = ['configure', 'build']
@@ -407,10 +401,8 @@ class PipWig(Wig):
 	def install(self):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user {}'.format(PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
-def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, dangerous, verbose):
+def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, verbose):
 	init()
-
-	assert not only or dangerous
 	
 	old = DictConfig.read(P.wigwamfile)
 	end = old.patch(dict(_config = dict(map(lambda x: x.split('='), config))))
@@ -421,18 +413,16 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 		if disable:
 			dict_config['disabled_features'] = disable
 		if git:
-			dict_config['fetch_params']['git_tag'] = git
+			dict_config['fetch_params'].update(dict(fetch_method = 'git', git_tag = git))
 		if version:
-			dict_config['fetch_params']['version'] = version
+			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
 		end = end.patch({wig_name : dict_config})
 	
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
-def upgrade(wig_names, dry, only, dangerous):
+def upgrade(wig_names, dry, only):
 	init()
-
-	assert not only or dangerous
 
 	old = DictConfig.read(P.wigwamfile)
 	end = old.copy()
@@ -442,26 +432,18 @@ def upgrade(wig_names, dry, only, dangerous):
 
 	for wig_name in wig_names:
 		if wig_name not in old:
-			print 'Package [{}] not installed or requested. Cannot upgrade, call install first.'.format(wig_name)
-			return
+			print('Skipping upgrade of package [{}]. The package is not installed.'.format(wig_name))
+			continue
 
 		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
 		if dict_config.get(DictConfig.SOURCES, None) != old[wig_name].get(DictConfig.SOURCES, None):
-			print 'Going to upgrade package [{}]: {} -> {}'.format(wig_name, old[wig_name].get(DictConfig.SOURCES, None), dict_config.get(DictConfig.SOURCES, None))
-			end.patch({wig_name : {DictConfig.SOURCES : dict_config[DictConfig.SOURCES]}})
+			print('Going to upgrade package [{}]: {} -> {}'.format(wig_name, old[wig_name].get(DictConfig.SOURCES, None), dict_config.get(DictConfig.SOURCES, None)))
+			end.patch({wig_name : dict(fetch_params = dict_config['fetch_params'])})
 
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = only)
 
 def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
-	dump_env = '''function dump_env {
-	echo "PWD=$PWD"
-	echo "PATH=$PATH"
-	echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-	echo "CPATH=$CPATH"
-	echo "LIBRARY_PATH=$LIBRARY_PATH"
-	echo "g++ -print-search-dirs: $(g++ -print-search-dirs)"
-}'''
 	def gen_installation_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
@@ -469,126 +451,105 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 		if not installation_order:
 			return
 
-		print '{} packages to be installed in the order below:'.format(len(installation_order))
+		print('{} packages to be installed in the order below:'.format(len(installation_order)))
 		for wig_name in installation_order:
-			print '{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies_)) if wigs[wig_name].dependencies_ else '')
-		print ''
+			print('{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies_)) if wigs[wig_name].dependencies_ else ''))
+		print('')
 
 		with open(installation_script_path, 'w') as out:
 			def w(x, prepend = '', stream = out):
 				if x != []:
 					print >> stream, '\n'.join([prepend + y for y in x]) if isinstance(x, list) else prepend + x
+
+			dump_env = '''function dump_env {
+				echo "PWD=$PWD"
+				echo "PATH=$PATH"
+				echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+				echo "CPATH=$CPATH"
+				echo "LIBRARY_PATH=$LIBRARY_PATH"
+				echo "g++ -print-search-dirs: $(g++ -print-search-dirs)"
+			}'''
 		
 			w(''''set -e # set -evx for debugging
-			trap show_log EXIT')
-			trap on_ctrl_c SIGINT')
-			exec 3>&1')
-			source "{}"
-			TIC="$(date +%s)"
-	function show_log {
-		exec 1>&3
-		if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
-		then
-			printf "error!\n\n"
-			echo "Error occurred while installing [$PACKAGE_NAME]. Press <ENTER> to open [$LOG], press <ESC> to quit."
-			read -s -n1 key
-			case $key in
-				$'\e') echo Quitting;;
-				$'') less $LOG;;
-			esac
-			reset
-			exit 1
-		fi
-		exit 0
-	}
-	
-	function on_ctrl_c {
-		exec 1>&3
-		echo "<CTRL+C> pressed. Aborting"
-		CTRLCPRESSED=1
-		reset
-		exit 1
-	}
-	function update_wigwamfile_installed {
-		python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
-	}
-	'''.replace('{}', P.activate.sh))
+				trap show_log EXIT')
+				trap on_ctrl_c SIGINT')
+				exec 3>&1')
+				source "{}"
+				TIC="$(date +%s)"
+				function show_log {
+					exec 1>&3
+					if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
+					then
+						printf "error!\n\n"
+						echo "Error occurred while installing [$PACKAGE_NAME]. Press <ENTER> to open [$LOG], press <ESC> to quit."
+						read -s -n1 key
+						case $key in
+							$'\e') echo Quitting;;
+							$'') less $LOG;;
+						esac
+						reset
+						exit 1
+					fi
+					exit 0
+				}
+				
+				function on_ctrl_c {
+					exec 1>&3
+					echo "<CTRL+C> pressed. Aborting"
+					CTRLCPRESSED=1
+					reset
+					exit 1
+				}
+				function update_wigwamfile_installed {
+					python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
+				}
+			'''.replace('{}', P.activate.sh))
 			w(dump_env)
 			w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
 
-			def update_wigwamfile_installed(d):
-				w('''cat <<"EOF" | update_wigwamfile_installed "{}"
-	{}
-	EOF
-	'''.format(os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
+			update_wigwamfile_installed = lambda d:	w('''cat <<"EOF" | update_wigwamfile_installed "{}"\n{}\nEOF\n'''.format(os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
+
 			update_wigwamfile_installed(dict(_config = env))
-			class Stage:
-				def __init__(self, name, file_name, skip, hook = lambda x, prepend: None):
-					self.name = name
-					self.file_name = file_name
-					self.skip = skip
-					self.hook = hook
-				
-				def __enter__(self):
-					if self.skip:
-						return lambda x: None
-					else:
-						w('printf "%%14s...  " {}'.format(self.name))
-						w('LOG="$LOGBASE/{}"'.format(self.file_name))
-						w('(')
-						self.hook('(', '')
-						def inner(x):
-							w(x, '\t')
-							self.hook(x, '\t')
-						return inner
-
-				def __exit__(self, type, value, traceback):
-					if not self.skip:
-						w(') > "$LOG" 2>&1')
-						self.hook(')', '')
-						w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
-			for wig_name in installation_order:
-				wig = wigs[wig_name]
-				s = lambda *xs: any([x in wig.skip_stages for x in xs])
-				debug_script_path = P.debug_script(wig_name)
-
-				w('')
-				w('PACKAGE_NAME={}'.format(wig_name))
-				w('printf "\\n$PACKAGE_NAME:\\n"')
-				if not s('all'):
-					w('cd "{}"'.format(P.root))
-					w('PREFIX="{}"'.format(P.prefix))
-					w('LOGBASE="{}"'.format(P.log_base(wig_name)))
-					w(S.mkdir_p('$LOGBASE'))
-		
-				with Stage('Fetching', 'fetch.txt', s('all', 'fetch')) as u:
-					u(wig.before_fetch)
-					u('dump_env')
-					u(wig.fetch())
-					u(wig.after_fetch)
-				
-				w(S.mkdir_p(wig.paths.src_dir))
-				w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
+			for wig in map(wigs.get, installation_order):
+				debug_script_path = P.debug_script(wig.name)
 				with open(debug_script_path, 'w') as out_debug:
 					d = lambda x, prepend = '': x != 'dump_env' and w(x, prepend, out_debug)
-					if not s('all', 'fetch'):
-						w('cd "{}"'.format(os.path.join(wig.paths.src_dir, wig.working_directory)))
-						d('cd "{}"'.format(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory))))
-
 					d('''PREFIX="{}"'''.format(os.path.abspath(P.prefix)))
 					d('source "{}"'.format(P.activate_sh))
 					d([dump_env])
-					for stage_name, skip_stages in [('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
-						with Stage(stage_name.capitalize().rstrip('e') + 'ing', stage_name + '.txt', s('all', *skip_stages), hook = d) as u:
+
+					w('PACKAGE_NAME={}'.format(wig.name))
+					w('PREFIX="{}"'.format(P.prefix))
+					w('LOGBASE="{}"'.format(P.log_base(wig.name)))
+					w('printf "\\n$PACKAGE_NAME:\\n"')
+					w(S.mkdir_p('$LOGBASE'))
+					w('cd "{}"'.format(P.root))
+		
+					wig.after_fetch += ['cd "{}"'.format(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))]
+					for stage_name, skip_stages in [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
+						hook = d if stage_name != 'fetch' else lambda *ignored : None
+						u = lambda x: w(x, '\t') or hook(x, '\t')
+						if all([stage_name not in wig.skip_stages for stage_name in skip_stages]):
+							w('printf "%%14sing...  " {}'.format(stage_name.capitalize().rstrip('e')))
+							w('LOG="$LOGBASE/{}"'.format(stage_name + '.txt'))
+							w('(')
+							self.hook('(', '')
+						
 							u(getattr(wig, 'before_' + stage_name))
 							u('dump_env')
 							u(getattr(wig, stage_name)())
 							u(getattr(wig, 'after_' + stage_name)
 
-				update_wigwamfile_installed({wig_name : wig.trace()})
+							w(') > "$LOG" 2>&1')
+							hook(')', '')
+							w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
+
+					w(S.mkdir_p(wig.paths.src_dir))
+					w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
+					update_wigwamfile_installed({wig_name : wig.trace()})
 			w('ALLOK=1')
 		
-		print 'Installation script generated: [{}]'.format(installation_script_path)
+		print('Installation script generated: [{}]'.format(installation_script_path))
 
 	def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs):
 		with open(P.activate_sh, 'w') as out:
@@ -635,16 +596,15 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 	gen_installation_script(P.build_script, requested.wigs, requested.env, installation_order)
 
 	if dry:
-		print 'Dry run. Quitting.'
+		print('Dry run. Quitting.')
 		return
 
 	if len(installation_order) == 0:
-		print '0 packages to be reconfigured. Quitting.'
+		print('0 packages to be reconfigured. Quitting.')
 	else:
-		print 'Running installation script now:'
+		print('Running installation script now:')
 		if 0 == subprocess.call(['bash', P.build_script] if not verbose else ['bash', '-xv', P.build_script]):
-			print ''
-			print 'ALL OK. KTHXBAI!'
+			print('\nALL OK. KTHXBAI!')
 
 def remove(wig_names):
 	init()
@@ -654,7 +614,7 @@ def remove(wig_names):
 	
 	for wig_name in wig_names:
 		if wig_name in installed:
-			print 'Package [{}] is already installed, artefacts will not be removed.'.format(wig_name)
+			print('Package [{}] is already installed, artefacts will not be removed.'.format(wig_name))
 		requested.pop(wig_name, None)
 		installed.pop(wig_name, None)
 		src_dir = os.path.join(P.src_tree, wig_name)
@@ -665,7 +625,7 @@ def remove(wig_names):
 	installed.save(P.wigwamfile_installed)
 	
 def which(wigwamfile):
-	print os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root)
+	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root))
 
 def status(verbose):
 	init()
@@ -676,14 +636,14 @@ def status(verbose):
 	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][DictConfig.FORMATTED_VERSION] if wig_name in traces_dic else ''	
 	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + {True: '{3}', False: '{3:.0}'}[verbose]
 
-	print fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI')
+	print(fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI'))
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
 		is_installed, is_conflicted = wig_name in installed
 		is_conflicted = requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
 		uri = '' if is_conflicted else (installed[wig_name][DictConfig.URI] if DictConfig.URI in installed[wig_name] else 'N/A')
-		print fmt.format('*' if is_installed else '', wig_name, version, uri)
+		print(fmt.format('*' if is_installed else '', wig_name, version, uri))
 
 def clean(wigwamfile):
 	print 'Removing wigwam artefacts... ',
@@ -693,7 +653,7 @@ def clean(wigwamfile):
 	for d in P.artefact_dirs:
 		if os.path.exists(d):
 			shutil.rmtree(d)
-	print 'ok'
+	print('ok')
 
 def init(wigwamfile = None):
 	for d in P.all_dirs:
@@ -709,52 +669,42 @@ def log(wig_name, fetch, configure, build, install):
 	stages = filter(locals().get, Wig.all_installation_stages) or Wig.all_installation_stages
 	subprocess.call('cat "{}" | less'.format('" '.join([os.path.join(P.log_base(wig_name), stage + '.txt') for stage in stages]), shell = True))
 
-def search(wig_name, print_json):
+def search(wig_name):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
 	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'config_access' : wig.config_access}
 
-	if wig_name:
-		wig_names = [wig_name]
-	else:
-		wig_names = []
+	def all_wig_names():
 		for repo in P.repos:
 			if 'github' in repo:
 				github_api_clues = re.search('.*github.com/(?P<repo_owner>.+)/(?P<repo_name>.+)/tree/(?P<ref>.+)/(?P<path>.+)', repo).groupdict()
 				github_api_uri = 'https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}?ref={ref}'.format(**github_api_clues)
-				wig_names += filter_wig_names([github_file_info['name'] for github_file_info in json.load(urllib2.urlopen(github_api_uri))])
+				yield filter_wig_names([github_file_info['name'] for github_file_info in json.load(urllib2.urlopen(github_api_uri))])
 			else:
-				wig_names += filter_wig_names(os.listdir(repo)) if os.path.exists(repo) else []
-
-	wigs = map(WigConfig.find_and_construct_wig, sorted(set(wig_names)))
-	if not print_json:
-		fmt = '{0:-20}\t{1:-10}\t{2}'
-		print fmt.format('NAME', 'VERSION', 'DEPENDENCIES')
-		for wig in wigs:
-			print fmt.format(wig.name, 'N/A', ', '.join(wig.dependencies))
-	else:
-		print json.dumps(map(to_json, wigs), indent = 2, sort_keys = True)
+				yield filter_wig_names(os.listdir(repo)) if os.path.exists(repo) else []
+		
+	wigs = map(WigConfig.find_and_construct_wig, sorted(set([wig_name] if wig_name else itertools.chain(*all_wig_names()))))
+	print(json.dumps(map(to_json, wigs), indent = 2, sort_keys = True))
 
 def run(dry, verbose, cmds = []):
 	if os.path.exists(P.activate_sh):
 		cmd = ('''bash --rcfile <(cat "$HOME/.bashrc"; cat "{}") -ci{} {}'''.format(P.activate_sh, 'x' if verbose else '', pipes.quote(' '.join(map(pipes.quote, cmds))))) if cmds else ('''bash {} --rcfile <(cat "$HOME/.bashrc"; cat "{}"; echo 'export PS1="$PS1/\ $ "') -i'''.format('-xv' if verbose else '', P.activate_sh))
 		if dry:
-			print cmd
-			print '# {}:'.format(P.activate_sh)
-			for line in open(P.activate_sh, 'r'):
-				print '# ' + line[:-1]
+			print(cmd)
+			print('# {}:'.format(P.activate_sh))
+			print(''.join(open(P.activate_sh)))
 		else:
 			subprocess.call(['bash', '-cx' if verbose else '-c', cmd])
 	else:
-		print 'The activate shell script doesn''t exist yet. Run "wigwam build" first.'
+		print('The activate shell script does not exist yet. Run "wigwam build" first.')
 
 if __name__ == '__main__':
 	def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
 		if issubclass(exc_type, KeyboardInterrupt):
-			print '<CTRL-C> pressed. Aborting.'
+			print('<CTRL-C> pressed. Aborting.')
 			return
 
-		print 'Unhandled exception occured! Please consider filing a bug report at {} along with the stack trace below:'.format(P.bugreport_page)
-		print ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+		print('Unhandled exception occured! Please consider filing a bug report at {} along with the stack trace below:'.format(P.bugreport_page))
+		print(''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 		sys.exit(1)
 	sys.excepthook = unhandled_exception_hook
 
@@ -780,7 +730,6 @@ if __name__ == '__main__':
 	cmd.add_argument('--config', '-D', action = 'append', default = [])
 	cmd.add_argument('--reinstall', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
-	cmd.add_argument('--dangerous', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	
 	cmd = subparsers.add_parser('build')
@@ -793,7 +742,6 @@ if __name__ == '__main__':
 	cmd.add_argument('wig_names', nargs = '*')
 	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
-	cmd.add_argument('--dangerous', action = 'store_true')
 	
 	cmd = subparsers.add_parser('run')
 	cmd.set_defaults(func = run)
@@ -825,7 +773,6 @@ if __name__ == '__main__':
 	cmd = subparsers.add_parser('search')
 	cmd.set_defaults(func = search)
 	cmd.add_argument('wig_name', default = None, nargs = '?')
-	cmd.add_argument('--json', action = 'store_true', dest = 'print_json')
 
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
