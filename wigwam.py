@@ -253,25 +253,21 @@ class WigConfig:
 
 	@staticmethod
 	def find_and_construct_wig(wig_name):
-		shortcut = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
-		if shortcut:
-			return shortcut[0](wig_name)
-
-		cls = None
+		wig_class = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
 				exec content in globals(), globals()
-				cls = globals.get(wig_name.replace('-', '_'))
+				wig_class += [globals.get(wig_name.replace('-', '_'))]
 				break
 			except:
 				continue
 
-		if cls is None:
+		if not wig_class:
 			print('Package [{}] is not found. Quitting.'.format(wig_name))
 			sys.exit(1)
 
-		return cls(wig_name)
+		return wig_class[0](wig_name)
 
 	@staticmethod
 	def dfs(graph, seeds, on_black = lambda wig_name: None):
@@ -296,7 +292,7 @@ class WigConfig:
 		return installation_order
 
 	def compute_installation_order(self, reconfigured, up = False, down = False, wig_name_subset = None):
-		if wig_name_subset == None:
+		if wig_name_subset is None:
 			wig_name_subset = self.wigs.keys()
 
 		if up:
@@ -313,14 +309,14 @@ class WigConfig:
 
 	def diff(self, graph):
 		s = lambda e: set(e) if isinstance(e, list) else set([e])
-		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [DictConfig.URI, DictConfig.VERSION, DictConfig.GIT_COMMIT, DictConfig.FEATURES, DictConfig.DEPENDS_ON]))))) if w != None else set(['N/A'])
+		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [DictConfig.URI, DictConfig.VERSION, DictConfig.GIT_COMMIT, DictConfig.FEATURES, DictConfig.DEPENDS_ON]))))) if w is not None else set(['N/A'])
 
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
 			other_fingerprint = fingerprint(other)
-			other_sources = other.sources if other != None else None
-			other_features_on_off = other.features_on_off if other != None else []
+			other_sources = other.sources if other is not None else None
+			other_features_on_off = other.features_on_off if other is not None else []
 			
 			if fingerprint(wig) != other_fingerprint:
 				to_install[wig_name] = {}
@@ -358,7 +354,7 @@ class LuarocksWig(Wig):
 	
 	def __init__(self, name, rockspec_path = None):
 		Wig.__init__(self, name)
-		if rockspec_path != None:
+		if rockspec_path is not None:
 			self.rockspec_path = rockspec_path
 	
 	def install(self):
@@ -533,15 +529,15 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 							w('printf "%%14sing...  " {}'.format(stage_name.capitalize().rstrip('e')))
 							w('LOG="$LOGBASE/{}"'.format(stage_name + '.txt'))
 							w('(')
+
 							self.hook('(', '')
-						
 							u(getattr(wig, 'before_' + stage_name))
 							u('dump_env')
 							u(getattr(wig, stage_name)())
 							u(getattr(wig, 'after_' + stage_name)
+							hook(')', '')
 
 							w(') > "$LOG" 2>&1')
-							hook(')', '')
 							w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
 
 					w(S.mkdir_p(wig.paths.src_dir))
@@ -639,8 +635,7 @@ def status(verbose):
 	print(fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI'))
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
-		is_installed, is_conflicted = wig_name in installed
-		is_conflicted = requested_version != installed_version
+		is_installed, is_conflicted = wig_name in installed, requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
 		uri = '' if is_conflicted else (installed[wig_name][DictConfig.URI] if DictConfig.URI in installed[wig_name] else 'N/A')
 		print(fmt.format('*' if is_installed else '', wig_name, version, uri))
@@ -789,7 +784,7 @@ if __name__ == '__main__':
 	global_root_dir = os.path.expanduser('~')
 	use_local = lambda local_file_name, local_cond: ((os.path.exists(os.path.join(local_root_dir, local_file_name)) or cmd == init or local_cond)) and not use_global
 	
-	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root != None) else global_root_dir
+	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root is not None) else global_root_dir
 	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
 	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamfilename), extra_repos = extra_repos)
 	
