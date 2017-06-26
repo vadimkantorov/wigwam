@@ -139,7 +139,7 @@ class Wig(object):
 		self.disabled_features = []
 		self.dependencies_ = set()
 		self.fetch_method = self.fetch_method or ('tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
-		self.paths = type('', None, dict(src_dir = os.path.join(P.src_tree, wig.name)))()
+		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 
 	def dict_config(self):
 		if self.fetch_method == 'tar':
@@ -152,9 +152,9 @@ class Wig(object):
 	
 	def load_dict_config(self, dict_config, dict_env):
 		self.env = dict_env
-		self.enabled_features += dict_config['enabled_features']
-		self.disabled_features += dict_config['disabled_features']
-		self.fetch_params = dict(self.__dict__.items() + dict_config['fetch_params'].items())
+		self.enabled_features += dict_config.get('enabled_features', [])
+		self.disabled_features += dict_config.get('disabled_features', [])
+		self.fetch_params = dict(self.__dict__.items() + dict_config.get('fetch_params', {}).items())
 
 	def trace(self):
 		return dict(self.fetch_params.items() + dict(enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
@@ -166,7 +166,7 @@ class Wig(object):
 
 		def tar(target_dir, tar_uri, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if uri.endswith(e)][0])
-			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components]
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components)]
 
 		def uri(target_dir, uri, **ignored):
 			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
@@ -238,8 +238,8 @@ class WigConfig:
 			for dep_wig_name in wig.dependencies:
 				wig.require(dep_wig_name)
 			wig.setup()
-			wig.enabled_features = wig.enabled_features + wig_dict_config['enabled_features']
-			wig.disabled_features = wig.disabled_features + wig_dict_config['disabled_features']
+			wig.enabled_features = wig.enabled_features + wig_dict_config.get('enabled_features', [])
+			wig.disabled_features = wig.disabled_features + wig_dict_config.get('disabled_features', [])
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs.keys():
@@ -258,9 +258,9 @@ class WigConfig:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
 				exec content in globals(), globals()
-				wig_class += [globals.get(wig_name.replace('-', '_'))]
+				wig_class += [globals().get(wig_name.replace('-', '_'))]
 				break
-			except:
+			except Exception, e:
 				continue
 
 		if not wig_class:
@@ -534,7 +534,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 							u(getattr(wig, 'before_' + stage_name))
 							u('dump_env')
 							u(getattr(wig, stage_name)())
-							u(getattr(wig, 'after_' + stage_name)
+							u(getattr(wig, 'after_' + stage_name))
 							hook(')', '')
 
 							w(') > "$LOG" 2>&1')
@@ -548,13 +548,9 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 		print('Installation script generated: [{}]'.format(installation_script_path))
 
 	def gen_activate_files(bin_dirs, lib_dirs, include_dirs, python_dirs):
+		activate_sh = [S.export_prepend_paths(S.PATH, bin_dirs), S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs), S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs), S.export_prepend_paths(S.CPATH, include_dirs), S.export_prepend_paths(S.PYTHONPATH, python_dirs), S.export(S.WIGWAM_PREFIX, os.path.abspath(P.prefix))]
 		with open(P.activate_sh, 'w') as out:
-			print >> out, S.export_prepend_paths(S.PATH, bin_dirs)
-			print >> out, S.export_prepend_paths(S.LD_LIBRARY_PATH, lib_dirs)
-			print >> out, S.export_prepend_paths(S.LIBRARY_PATH, lib_dirs)
-			print >> out, S.export_prepend_paths(S.CPATH, include_dirs)
-			print >> out, S.export_prepend_paths(S.PYTHONPATH, python_dirs)
-			print >> out, S.export(S.WIGWAM_PREFIX, os.path.abspath(P.prefix))
+			out.write('\n'.join(activate_sh))
 
 	def lint(old = None):
 		begin = DictConfig.read(P.wigwamfile)

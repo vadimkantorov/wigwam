@@ -1,4 +1,4 @@
 class yasm(Wig):
-	tar_uri = 'http://www.tortall.net/projects/yasm/releases/yasm-{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'http://www.tortall.net/projects/yasm/releases/yasm-{VERSION}.tar.gz'
 	git_uri = 'https://github.com/yasm/yasm'	
-	last_release_version = '1.3.0'
+	version = '1.3.0'
