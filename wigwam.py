@@ -98,13 +98,14 @@ class S:
 	rm_rf = staticmethod(lambda *args: 'rm -rf {}'.format(' '.join(map(S.qq, args))))
 
 class Wig(object):
-	git_branch = None
-	git_commit = None
-	git_init_submodules = None
-	tar_strip_components = None
-	working_directory = '.'
 	fetch_method = None
 	version = None
+	git_uri = None
+	git_branch = None
+	git_commit = None
+	tar_uri = None
+	tar_strip_components = None
+	working_directory = '.'
 
 	config_access = []
 	dependencies = []
@@ -154,7 +155,7 @@ class Wig(object):
 		self.env = dict_env
 		self.enabled_features += dict_config.get('enabled_features', [])
 		self.disabled_features += dict_config.get('disabled_features', [])
-		self.fetch_params = dict(self.__dict__.items() + dict_config.get('fetch_params', {}).items())
+		self.fetch_params = dict(dict(fetch_method = self.fetch_method, version = self.version, git_uri = self.git_uri, git_branch = self.git_branch, git_commit = self.git_commit, tar_uri = self.tar_uri, tar_strip_components = self.tar_strip_components).items() + dict_config.get('fetch_params', {}).items())
 
 	def trace(self):
 		return dict(self.fetch_params.items() + dict(enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
@@ -308,23 +309,11 @@ class WigConfig:
 		return {x : [] for x in set((dep_wig_name for wig in self.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in self.wigs.keys()))}
 
 	def diff(self, graph):
-		s = lambda e: set(e) if isinstance(e, list) else set([e])
-		fingerprint = lambda w: set(filter(bool, set.union(*map(s, map(w.trace().get, [DictConfig.URI, DictConfig.VERSION, DictConfig.GIT_COMMIT, DictConfig.FEATURES, DictConfig.DEPENDS_ON]))))) if w is not None else set(['N/A'])
-
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
-			other_fingerprint = fingerprint(other)
-			other_sources = other.sources if other is not None else None
-			other_features_on_off = other.features_on_off if other is not None else []
-			
-			if fingerprint(wig) != other_fingerprint:
-				to_install[wig_name] = {}
-				features_on_off = [feat for feat in wig.features_on_off if feat not in other_features_on_off]
-				if len(features_on_off) > 0:
-					to_install[wig_name][DictConfig.FEATURES] = ' '.join(features_on_off)
-				if wig.sources != other_sources:
-					to_install[wig_name][DictConfig.SOURCES] = wig.sources
+			if wig.trace() != (other.trace() if other is not None else None):
+				to_install[wig_name] = dict(enabled_features = other.enabled_features, disabled_features = other.disabled_features, fetch_params = other.fetch_params)
 			
 		return DictConfig(to_install)
 
