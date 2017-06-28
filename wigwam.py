@@ -165,15 +165,15 @@ class Wig(object):
 			tag = git_tag or git_commit or git_branch
 			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(git_uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if tag is not None else [])
 
-		def tar(target_dir, tar_uri, tar_strip_components = 1, **ignored):
-			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if uri.endswith(e)][0])
-			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components)]
+		def tar(target_dir, tar_uri, version, tar_strip_components = 1, **ignored):
+			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if tar_uri.endswith(e)][0])
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(tar_uri.format(VERSION = version), downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components)]
 
 		def uri(target_dir, uri, **ignored):
 			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
 			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(uri, downloaded_file_path)]
 
-		return locals()[fetch_params['fetch_method']](self.paths.src_dir, **self.fetch_params)
+		return locals()[self.fetch_params['fetch_method']](self.paths.src_dir, **self.fetch_params)
 	
 	def configure(self):
 		return S.configure(self.configure_flags)
@@ -254,7 +254,8 @@ class WigConfig:
 
 	@staticmethod
 	def find_and_construct_wig(wig_name):
-		wig_class = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
+		#wig_class = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
+		wig_class = [s for k, s in {}.items() if wig_name.startswith(k)]
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
@@ -313,78 +314,78 @@ class WigConfig:
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
 			if wig.trace() != (other.trace() if other is not None else None):
-				to_install[wig_name] = dict(enabled_features = other.enabled_features, disabled_features = other.disabled_features, fetch_params = other.fetch_params)
+				to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
 			
 		return DictConfig(to_install)
 
-class CmakeWig(Wig):
-	def __init__(self, name):
-		Wig.__init__(self, name)
-		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
-		self.before_build = [S.CD_BUILD]
-		self.before_install = [S.CD_BUILD]
-		self.dependencies_ += ['cmake']
-
-	def configure(self):
-		return [S.MKDIR_CD_BUILD, 'cmake {} ..'.format(' '.join(self.cmake_flags))]
-
-	def switch_debug(self, on):
-		self.cmake_flags += ['-D CMAKE_BUILD_TYPE={}'.format('DEBUG' if on else 'RELEASE')]
-
-class AutogenWig(Wig):
-	def __init__(self, name):
-		Wig.__init__(self, name)
-		self.before_configure += ['bash autogen.sh']
-
-class LuarocksWig(Wig):
-	skip_stages = ['fetch', 'configure', 'build']
-	LUAROCKS_PATH = '$PREFIX/bin/luarocks'
-	rockspec_path = None
-	
-	def __init__(self, name, rockspec_path = None):
-		Wig.__init__(self, name)
-		if rockspec_path is not None:
-			self.rockspec_path = rockspec_path
-	
-	def install(self):
-		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '{} {} make {}'.format(S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '{} {} install {}'.format(S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name[len('lua-'):])]
-
-class DebWig(Wig):
-	skip_stages = ['build']
-	APT_GET_OUTPUT_CACHE = {}
-
-	def __init__(self, name):
-		Wig.__init__(self, name)
-		if self.name not in DebWig.APT_GET_OUTPUT_CACHE:
-			DebWig.APT_GET_OUTPUT_CACHE[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name[len('deb-'):]])
-
-		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
-		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
-		if len(self.deb_uris) == 0:
-			self.skip_stages += Wig.all_installation_stages
-
-	def load_dict_config(self, *ignored):
-		self.fetch_params = dict(uri = ', '.join(self.deb_uris))
-	
-	def fetch(self):
-		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
-	
-	def install(self):
-		return ['dpkg -x "{}" "{}"'.format('" '.join(self.cached_deb_paths), P.prefix_deb)]
-
-class PythonWig(Wig):
-	skip_stages = ['configure', 'build']
-
-	def install(self):
-		return [S.python_setup_install]
-
-class PipWig(Wig):
-	skip_stages = ['fetch', 'configure', 'build']
-	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
-	wheel_path = None
-
-	def install(self):
-		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user {}'.format(PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
+#class CmakeWig(Wig):
+#	def __init__(self, name):
+#		Wig.__init__(self, name)
+#		self.cmake_flags = [S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG]
+#		self.before_build = [S.CD_BUILD]
+#		self.before_install = [S.CD_BUILD]
+#		self.dependencies_ += ['cmake']
+#
+#	def configure(self):
+#		return [S.MKDIR_CD_BUILD, 'cmake {} ..'.format(' '.join(self.cmake_flags))]
+#
+#	def switch_debug(self, on):
+#		self.cmake_flags += ['-D CMAKE_BUILD_TYPE={}'.format('DEBUG' if on else 'RELEASE')]
+#
+#class AutogenWig(Wig):
+#	def __init__(self, name):
+#		Wig.__init__(self, name)
+#		self.before_configure += ['bash autogen.sh']
+#
+#class LuarocksWig(Wig):
+#	skip_stages = ['fetch', 'configure', 'build']
+#	LUAROCKS_PATH = '$PREFIX/bin/luarocks'
+#	rockspec_path = None
+#	
+#	def __init__(self, name, rockspec_path = None):
+#		Wig.__init__(self, name)
+#		if rockspec_path is not None:
+#			self.rockspec_path = rockspec_path
+#	
+#	def install(self):
+#		return [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '{} {} make {}'.format(S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.rockspec_path)] if self.rockspec_path else [S.export(S.CMAKE_PREFIX_PATH, '$PREFIX'), '{} {} install {}'.format(S.makeflags(self.make_flags), LuarocksWig.LUAROCKS_PATH, self.name[len('lua-'):])]
+#
+#class DebWig(Wig):
+#	skip_stages = ['build']
+#	APT_GET_OUTPUT_CACHE = {}
+#
+#	def __init__(self, name):
+#		Wig.__init__(self, name)
+#		if self.name not in DebWig.APT_GET_OUTPUT_CACHE:
+#			DebWig.APT_GET_OUTPUT_CACHE[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name[len('deb-'):]])
+#
+#		self.deb_uris = re.findall("'(http.+)'", DebWig.APT_GET_OUTPUT_CACHE[self.name]) or []
+#		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
+#		if len(self.deb_uris) == 0:
+#			self.skip_stages += Wig.all_installation_stages
+#
+#	def load_dict_config(self, *ignored):
+#		self.fetch_params = dict(uri = ', '.join(self.deb_uris))
+#	
+#	def fetch(self):
+#		return [S.download(uri, downloaded_file_path) for uri, downloaded_file_path in zip(self.deb_uris, self.cached_deb_paths)]
+#	
+#	def install(self):
+#		return ['dpkg -x "{}" "{}"'.format('" '.join(self.cached_deb_paths), P.prefix_deb)]
+#
+#class PythonWig(Wig):
+#	skip_stages = ['configure', 'build']
+#
+#	def install(self):
+#		return [S.python_setup_install]
+#
+#class PipWig(Wig):
+#	skip_stages = ['fetch', 'configure', 'build']
+#	PIP_PATH = 'pip' # '$PREFIX/bin/pip'
+#	wheel_path = None
+#
+#	def install(self):
+#		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user {}'.format(PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
 def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, verbose):
 	init()
@@ -412,9 +413,7 @@ def upgrade(wig_names, dry, only):
 	old = DictConfig.read(P.wigwamfile)
 	end = old.copy()
 
-	if not wig_names:
-		wig_names = filter(lambda x: x != '_config', old.keys())
-
+	wig_names = wig_names or filter(lambda x: x != '_config', old.keys())
 	for wig_name in wig_names:
 		if wig_name not in old:
 			print('Skipping upgrade of package [{}]. The package is not installed.'.format(wig_name))
@@ -455,17 +454,17 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				echo "g++ -print-search-dirs: $(g++ -print-search-dirs)"
 			}'''
 		
-			w(''''set -e # set -evx for debugging
-				trap show_log EXIT')
-				trap on_ctrl_c SIGINT')
-				exec 3>&1')
+			w('''set -e # set -evx for debugging
+				trap show_log EXIT
+				trap on_ctrl_c SIGINT
+				exec 3>&1
 				source "{}"
 				TIC="$(date +%s)"
 				function show_log {
 					exec 1>&3
 					if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
 					then
-						printf "error!\n\n"
+						printf "error!\\n\\n"
 						echo "Error occurred while installing [$PACKAGE_NAME]. Press <ENTER> to open [$LOG], press <ESC> to quit."
 						read -s -n1 key
 						case $key in
@@ -488,7 +487,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				function update_wigwamfile_installed {
 					python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
 				}
-			'''.replace('{}', P.activate.sh))
+			'''.replace('{}', P.activate_sh))
 			w(dump_env)
 			w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
 
@@ -515,11 +514,11 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 						hook = d if stage_name != 'fetch' else lambda *ignored : None
 						u = lambda x: w(x, '\t') or hook(x, '\t')
 						if all([stage_name not in wig.skip_stages for stage_name in skip_stages]):
-							w('printf "%%14sing...  " {}'.format(stage_name.capitalize().rstrip('e')))
+							w('printf "%%14s...  " {}ing'.format(stage_name.capitalize().rstrip('e')))
 							w('LOG="$LOGBASE/{}"'.format(stage_name + '.txt'))
 							w('(')
 
-							self.hook('(', '')
+							hook('(', '')
 							u(getattr(wig, 'before_' + stage_name))
 							u('dump_env')
 							u(getattr(wig, stage_name)())
