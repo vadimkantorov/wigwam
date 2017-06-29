@@ -81,21 +81,22 @@ class S:
 	CD_PARENT = 'cd ..'
 	MAKEFLAGS = 'MAKEFLAGS'
 	
+	onoff = staticmethod({True : 'on', False : 'off'}.get)
+	ONOFF = staticmethod({True : 'ON', False : 'OFF'}.get)
+	qq = staticmethod('"{}"'.format)
 	download = staticmethod(('wget {} -O "{}"' if 0 == subprocess.call(['which', 'wget'], stdout = subprocess.PIPE, stderr = subprocess.PIPE) else 'curl {} -o "{}"').format)
 	mkdir_p = staticmethod('mkdir -p "{}"'.format)
-	make_jobs = staticmethod('-j{}'.format)
+	ln = staticmethod('ln -f -s "{}" "{}"'.format)
+	rm_rf = staticmethod(lambda *args: 'rm -rf {}'.format(' '.join(map(S.qq, args))))
+	cd = staticmethod('cd "{}"'.format)
 	export = staticmethod('export {}="{}"'.format)
 	export_prepend_paths = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
 	configure = staticmethod(lambda flags: './configure {}'.format(' '.join(flags)))
-	onoff = staticmethod({True : 'on', False : 'off'}.get)
-	ONOFF = staticmethod({True : 'ON', False : 'OFF'}.get)
 	make = staticmethod(lambda flags: 'make {}'.format(' '.join(flags)))
+	make_jobs = staticmethod('-j{}'.format)
 	makeflags = staticmethod(lambda flags: '{}="{} {}"'.format(S.MAKEFLAGS, ' '.join(flags), os.getenv(S.MAKEFLAGS, '')) if flags else '')
 	make_install = staticmethod(lambda flags: 'make install {}'.format(' '.join(flags)))
 	python_setup_install = 'python setup.py install --prefix="{}"'.format(PREFIX_PYTHON)
-	ln = staticmethod('ln -f -s "{}" "{}"'.format)
-	qq = staticmethod('"{}"'.format)
-	rm_rf = staticmethod(lambda *args: 'rm -rf {}'.format(' '.join(map(S.qq, args))))
 
 class Wig(object):
 	fetch_method = None
@@ -151,8 +152,8 @@ class Wig(object):
 		else:
 			return {}
 	
-	def load_dict_config(self, dict_config, dict_config):
-		self.env = dict_config
+	def load_dict_config(self, dict_config, env):
+		self.env = env
 		self.enabled_features += dict_config.get('enabled_features', [])
 		self.disabled_features += dict_config.get('disabled_features', [])
 		self.fetch_params = dict(dict(fetch_method = self.fetch_method, version = self.version, git_uri = self.git_uri, git_branch = self.git_branch, git_commit = self.git_commit, tar_uri = self.tar_uri, tar_strip_components = self.tar_strip_components).items() + dict_config.get('fetch_params', {}).items())
@@ -167,7 +168,7 @@ class Wig(object):
 
 		def tar(target_dir, tar_uri, version, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if tar_uri.endswith(e)][0])
-			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(tar_uri.format(VERSION = version), downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, tar_strip_components)]
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(tar_uri.format(VERSION = version), downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, 1 if tar_strip_components is None else tar_strip_components)]
 
 		def uri(target_dir, uri, **ignored):
 			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
@@ -454,7 +455,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				echo "g++ -print-search-dirs: $(g++ -print-search-dirs)"
 			}'''
 		
-			w('''set -e # set -evx for debugging
+			w('''set -e #vx
 				trap show_log EXIT
 				trap on_ctrl_c SIGINT
 				exec 3>&1
@@ -508,25 +509,24 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 					w('printf "\\n$PACKAGE_NAME:\\n"')
 					w(S.mkdir_p('$LOGBASE'))
 					w('cd "{}"'.format(P.root))
-		
-					wig.after_fetch += ['cd "{}"'.format(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))]
-					for stage_name, skip_stages in [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
-						hook = d if stage_name != 'fetch' else lambda *ignored : None
+					for stage, skip_stages in [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
+						hook = d if stage != 'fetch' else lambda *ignored : None
 						u = lambda x: w(x, '\t') or hook(x, '\t')
-						if all([stage_name not in wig.skip_stages for stage_name in skip_stages]):
-							w('printf "%%14s...  " {}ing'.format(stage_name.capitalize().rstrip('e')))
-							w('LOG="$LOGBASE/{}"'.format(stage_name + '.txt'))
+						if all([stage not in wig.skip_stages for stage in skip_stages]):
+							w('printf "%14s...  " {}'.format(stage.capitalize()))
+							w('LOG="$LOGBASE/{}.txt"'.format(stage))
 							w('(')
 
 							hook('(', '')
-							u(getattr(wig, 'before_' + stage_name))
+							u(getattr(wig, 'before_' + stage))
 							u('dump_env')
-							u(getattr(wig, stage_name)())
-							u(getattr(wig, 'after_' + stage_name))
+							u(getattr(wig, stage)())
+							u(getattr(wig, 'after_' + stage))
 							hook(')', '')
 
 							w(') > "$LOG" 2>&1')
 							w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
+							w(S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory))) if stage == 'fetch' else '')
 
 					w(S.mkdir_p(wig.paths.src_dir))
 					w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
@@ -646,7 +646,7 @@ def init(wigwamfile = None):
 
 def log(wig_name, fetch, configure, build, install):
 	stages = filter(locals().get, Wig.all_installation_stages) or Wig.all_installation_stages
-	subprocess.call('cat "{}" | less'.format('" '.join([os.path.join(P.log_base(wig_name), stage + '.txt') for stage in stages]), shell = True))
+	subprocess.call('cat "{}" | less'.format('" "'.join([os.path.join(P.log_base(wig_name), stage + '.txt') for stage in stages])), shell = True)
 
 def search(wig_name):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
@@ -746,7 +746,7 @@ if __name__ == '__main__':
 	cmd.add_argument('wig_name')
 	cmd.add_argument('--fetch', action = 'store_true')
 	cmd.add_argument('--configure', action = 'store_true')
-	cmd.add_argument('--make', action = 'store_true')
+	cmd.add_argument('--build', action = 'store_true')
 	cmd.add_argument('--install', action = 'store_true')
 
 	cmd = subparsers.add_parser('search')
