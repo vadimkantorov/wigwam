@@ -151,8 +151,8 @@ class Wig(object):
 		else:
 			return {}
 	
-	def load_dict_config(self, dict_config, dict_env):
-		self.env = dict_env
+	def load_dict_config(self, dict_config, dict_config):
+		self.env = dict_config
 		self.enabled_features += dict_config.get('enabled_features', [])
 		self.disabled_features += dict_config.get('disabled_features', [])
 		self.fetch_params = dict(dict(fetch_method = self.fetch_method, version = self.version, git_uri = self.git_uri, git_branch = self.git_branch, git_commit = self.git_commit, tar_uri = self.tar_uri, tar_strip_components = self.tar_strip_components).items() + dict_config.get('fetch_params', {}).items())
@@ -217,8 +217,8 @@ class DictConfig(dict):
 	def patch(self, diff):
 		dict_config = self.copy()
 
-		if '_config' in diff:
-			dict_config['_config'] = dict(dict_config.get('_config', {}).items() + diff.pop('_config', {}).items())
+		if '_env' in diff:
+			dict_config['_env'] = dict(dict_config.get('_env', {}).items() + diff.pop('_env', {}).items())
 		for wig_name, wig_dict_config in diff.items():
 			dict_config[wig_name] = wig_dict_config #if wig_name not in dict_config
 
@@ -230,7 +230,7 @@ class DictConfig(dict):
 class WigConfig:
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
-		self.env = dict_config.pop('_config', {})
+		self.env = dict_config.pop('_env', {})
 
 		self.wigs = {}
 		for wig_name, wig_dict_config in dict_config.items():
@@ -391,7 +391,7 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 	init()
 	
 	old = DictConfig.read(P.wigwamfile)
-	end = old.patch(dict(_config = dict(map(lambda x: x.split('='), config))))
+	end = old.patch(dict(_env = dict(map(lambda x: x.split('='), config))))
 	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
 		if enable:
@@ -493,7 +493,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 
 			update_wigwamfile_installed = lambda d:	w('''cat <<"EOF" | update_wigwamfile_installed "{}"\n{}\nEOF\n'''.format(os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
 
-			update_wigwamfile_installed(dict(_config = env))
+			update_wigwamfile_installed(dict(_env = env))
 			for wig in map(wigs.get, installation_order):
 				debug_script_path = P.debug_script(wig.name)
 				with open(debug_script_path, 'w') as out_debug:
