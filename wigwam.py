@@ -188,9 +188,6 @@ class Wig(object):
 	def setup(self):
 		pass
 
-	def switch(self, feat_name, on):
-		pass
-
 	def process_feature_hooks(self):
 		for on, feat_name in zip(itertools.repeat(True), self.enabled_features) + zip(itertools.repeat(False), self.disabled_features):
 			f1, f2 = 'switch_{}_{}'.format(feat_name, S.onoff(on)), 'switch_{}'.format(feat_name)
@@ -488,6 +485,10 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				function update_wigwamfile_installed {
 					python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
 				}
+				function print_ok_toc {
+					TOC="$(($(date +%s)-TIC))"
+					echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"
+				}
 			'''.replace('{}', P.activate_sh))
 			w(dump_env)
 			w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
@@ -525,7 +526,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 							hook(')', '')
 
 							w(') > "$LOG" 2>&1')
-							w('TOC="$(($(date +%s)-TIC))"; echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"')
+							w('print_ok_toc')
 							w(S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory))) if stage == 'fetch' else '')
 
 					w(S.mkdir_p(wig.paths.src_dir))
