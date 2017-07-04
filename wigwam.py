@@ -385,11 +385,11 @@ class WigConfig:
 #	def install(self):
 #		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user {}'.format(PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
-def install(wig_names, enable, disable, git, version, dry, config, reinstall, only, verbose):
+def install(wig_names, enable, disable, git, version, dry, env, verbose, reinstall, only):
 	init()
 	
 	old = DictConfig.read(P.wigwamfile)
-	end = old.patch(dict(_env = dict(map(lambda x: x.split('='), config))))
+	end = old.patch(_env = env)
 	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
 		if enable:
@@ -405,25 +405,20 @@ def install(wig_names, enable, disable, git, version, dry, config, reinstall, on
 	end.save(P.wigwamfile)
 	build(dry = dry, old = old, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
-def upgrade(wig_names, dry, only):
+def upgrade(wig_names, dry, recursive):
 	init()
 
 	old = DictConfig.read(P.wigwamfile)
 	end = old.copy()
-
-	wig_names = wig_names or filter(lambda x: x != '_config', old.keys())
+	wig_names = wig_names or filter(lambda x: x != '_env', old.keys())
 	for wig_name in wig_names:
-		if wig_name not in old:
-			print('Skipping upgrade of package [{}]. The package is not installed.'.format(wig_name))
-			continue
-
-		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
-		if dict_config.get(DictConfig.SOURCES, None) != old[wig_name].get(DictConfig.SOURCES, None):
-			print('Going to upgrade package [{}]: {} -> {}'.format(wig_name, old[wig_name].get(DictConfig.SOURCES, None), dict_config.get(DictConfig.SOURCES, None)))
-			end.patch({wig_name : dict(fetch_params = dict_config['fetch_params'])})
-
+		fetch_params_old = old.get(wig_name, {}).get('fetch_params')
+		fetch_params_new = WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')
+		if fetch_params_new != fetch_params_old:
+			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
+			end.patch({wig_name : dict(fetch_params = fetch_params_new)})
 	end.save(P.wigwamfile)
-	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = only)
+	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = not recursive)
 
 def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
 	def gen_installation_script(installation_script_path, wigs, env, installation_order):
@@ -443,7 +438,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				if x != []:
 					print >> stream, '\n'.join([prepend + y for y in x]) if isinstance(x, list) else prepend + x
 
-			dump_env = '''function dump_env {
+			dump_env = '''dump_env() {
 				echo "PWD=$PWD"
 				echo "PATH=$PATH"
 				echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
@@ -458,7 +453,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 				exec 3>&1
 				source "{}"
 				TIC="$(date +%s)"
-				function show_log {
+				show_log() {
 					exec 1>&3
 					if [ -z $ALLOK ] || [ $CTRLCPRESSED ]
 					then
@@ -475,17 +470,17 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 					exit 0
 				}
 				
-				function on_ctrl_c {
+				on_ctrl_c() {
 					exec 1>&3
 					echo "<CTRL+C> pressed. Aborting"
 					CTRLCPRESSED=1
 					reset
 					exit 1
 				}
-				function update_wigwamfile_installed {
+				update_wigwamfile_installed() {
 					python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
 				}
-				function print_ok_toc {
+				print_ok_toc() {
 					TOC="$(($(date +%s)-TIC))"
 					echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"
 				}
@@ -548,7 +543,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 			old = begin
 
 		while True:
-			to_install = DictConfig({wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()})
+			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()}
 			if len(to_install) == 0:
 				break
 			end = end.patch(to_install)
@@ -605,8 +600,8 @@ def remove(wig_names):
 	requested.save(P.wigwamfile)
 	installed.save(P.wigwamfile_installed)
 	
-def which(wigwamfile):
-	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.dirname(P.root))
+def which(wigwamfile, prefix):
+	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.abspath(P.prefix) if prefix else os.path.dirname(P.root))
 
 def status(verbose):
 	init()
@@ -614,7 +609,7 @@ def status(verbose):
 	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 
-	format_version = lambda traces_dic, wig_name: traces_dic[wig_name][DictConfig.FORMATTED_VERSION] if wig_name in traces_dic else ''	
+	format_version = lambda traces_dic, wig_name: json.dumps(traces_dic[wig_name]) if wig_name in traces_dic else ''	
 	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + {True: '{3}', False: '{3:.0}'}[verbose]
 
 	print(fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI'))
@@ -707,7 +702,7 @@ if __name__ == '__main__':
 	group = cmd.add_mutually_exclusive_group()
 	group.add_argument('--git', nargs = '?', const = True)
 	group.add_argument('--version')
-	cmd.add_argument('--config', '-D', action = 'append', default = [])
+	cmd.add_argument('--env', '-D', action = type('', (argparse.Action, ), dict(__call__ = lambda a, p, n, v, o: getattr(n, a.dest).update(dict([v.split('=')])))), default = {})
 	cmd.add_argument('--reinstall', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
@@ -721,7 +716,7 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = upgrade)
 	cmd.add_argument('wig_names', nargs = '*')
 	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--only', action = 'store_true')
+	cmd.add_argument('--recursive', action = 'store_true')
 	
 	cmd = subparsers.add_parser('run')
 	cmd.set_defaults(func = run)
@@ -735,7 +730,9 @@ if __name__ == '__main__':
 	cmd.add_argument('--verbose', action = 'store_true')
 		
 	cmd = subparsers.add_parser('which')
-	cmd.add_argument('--wigwamfile', action = 'store_true')
+	group = cmd.add_mutually_exclusive_group()
+	group.add_argument('--wigwamfile', action = 'store_true')
+	group.add_argument('--prefix', action = 'store_true')
 	cmd.set_defaults(func = which)
 	
 	cmd = subparsers.add_parser('status')
