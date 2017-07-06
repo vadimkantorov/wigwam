@@ -22,22 +22,20 @@ class P:
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
 		P.root = root
-		p = lambda x: os.path.join(P.root, x)
 
 		P.wigwamfile = wigwamfile
-		P.src_tree = p('src')
-		P.prefix = p('prefix')
+		P.src_tree = os.path.join(P.root, 'src')
+		P.prefix = os.path.join(P.root, 'prefix')
+		P.log_root = os.path.join('log')
+		P.tar_root = os.path.join('tar')
+		P.deb_root = os.path.join('deb')
+		P.debug_root = os.path.join('debug')
+		P.activate_sh = os.path.join('activate.sh')
+		P.build_script = os.path.join('build.generated.sh')
+		P.wigwamfile_installed = os.path.join(P.wigwamfilename + '.installed')
+				
 		P.prefix_deb = os.path.join(P.prefix, 'deb')
 		P.prefix_python = os.path.join(P.prefix, 'python')
-		P.log_root = p('log')
-		P.tar_root = p('tar')
-		P.deb_root = p('deb')
-		P.debug_root = p('debug')
-		
-		P.activate_sh = p('activate.sh')
-		P.build_script = p('build.generated.sh')
-		P.wigwamfile_installed = p(P.wigwamfilename + '.installed')
-				
 		python_module_path,  python_bin_path, python_include_path = [os.path.join(P.prefix_python, path_component) for path_component in P.python_prefix_scheme]
 		P.prefix_bin_dirs = [os.path.join(P.prefix, 'bin'), os.path.join(P.prefix_deb, 'usr/bin'), python_bin_path]
 		P.prefix_lib_dirs = [os.path.join(P.prefix, 'lib64'), os.path.join(P.prefix, 'lib'), os.path.join(P.prefix_deb, 'usr/lib'), os.path.join(P.prefix_deb, 'usr/lib/x86_64-linux-gnu')]
@@ -202,30 +200,7 @@ class Wig(object):
 	def require(self, wig_name):
 		self.dependencies_.append(wig_name)
 
-class DictConfig(dict):
-	@staticmethod
-	def read(path):
-		with open(path, 'r') as f:
-			return DictConfig(json.load(f) if os.path.exists(path) else {})
-
-	def save(self, path):
-		with open(path, 'w') as f:
-			json.dump(dict(self), f, indent = 2, sort_keys = True)
-
-	def patch(self, diff):
-		dict_config = self.copy()
-
-		if '_env' in diff:
-			dict_config['_env'] = dict(dict_config.get('_env', {}).items() + diff.pop('_env', {}).items())
-		for wig_name, wig_dict_config in diff.items():
-			dict_config[wig_name] = wig_dict_config #if wig_name not in dict_config
-
-		return dict_config
-	
-	def copy(self):
-		return DictConfig(dict.copy(self))
-
-class WigConfig:
+class WigConfig(object):
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
 		self.env = dict_config.pop('_env', {})
@@ -251,6 +226,27 @@ class WigConfig:
 		self.python_dirs = P.prefix_python_dirs + flatten(map(lambda wig: wig.python_dirs, self.wigs.values()))
 
 	@staticmethod
+	def read_dict_config(path):
+		with open(path, 'r') as f:
+			return json.load(f) if os.path.exists(path) else {}
+
+	@staticmethod
+	def save_dict_config(path, dict_config):
+		with open(path, 'w') as f:
+			json.dump(dict_config, f, indent = 2, sort_keys = True)
+
+	@staticmethod
+	def patch_dict_config(dict_config, diff):
+		dict_config = dict_config.copy()
+
+		if '_env' in diff:
+			dict_config['_env'] = dict(dict_config.get('_env', {}).items() + diff.pop('_env', {}).items())
+		for wig_name, wig_dict_config in diff.items():
+			dict_config[wig_name] = wig_dict_config #if wig_name not in dict_config
+
+		return dict_config
+
+	@staticmethod
 	def find_and_construct_wig(wig_name):
 		#wig_class = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
 		wig_class = [s for k, s in {}.items() if wig_name.startswith(k)]
@@ -260,7 +256,7 @@ class WigConfig:
 				exec content in globals(), globals()
 				wig_class += [globals().get(wig_name.replace('-', '_'))]
 				break
-			except Exception, e:
+			except:
 				continue
 
 		if not wig_class:
@@ -388,8 +384,8 @@ class WigConfig:
 def install(wig_names, enable, disable, git, version, dry, env, verbose, reinstall, only):
 	init()
 	
-	old = DictConfig.read(P.wigwamfile)
-	end = old.patch(_env = env)
+	old = WigConfig.read_dict_config(P.wigwamfile)
+	end = WigConfig.patch_dict_config(old, dict(_env = env))
 	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
 		if enable:
@@ -400,15 +396,15 @@ def install(wig_names, enable, disable, git, version, dry, env, verbose, reinsta
 			dict_config['fetch_params'].update(dict(fetch_method = 'git', git_tag = git))
 		if version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
-		end = end.patch({wig_name : dict_config})
+		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	
-	end.save(P.wigwamfile)
+	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(dry = dry, old = old, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
 
 def upgrade(wig_names, dry, recursive):
 	init()
 
-	old = DictConfig.read(P.wigwamfile)
+	old = WigConfig.read_dict_config(P.wigwamfile)
 	end = old.copy()
 	wig_names = wig_names or filter(lambda x: x != '_env', old.keys())
 	for wig_name in wig_names:
@@ -416,8 +412,8 @@ def upgrade(wig_names, dry, recursive):
 		fetch_params_new = WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')
 		if fetch_params_new != fetch_params_old:
 			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
-			end.patch({wig_name : dict(fetch_params = fetch_params_new)})
-	end.save(P.wigwamfile)
+			WigConfig.patch_dict_config(end, {wig_name : dict(fetch_params = fetch_params_new)})
+	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = not recursive)
 
 def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
@@ -537,7 +533,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 			out.write('\n'.join(activate_sh))
 
 	def lint(old = None):
-		begin = DictConfig.read(P.wigwamfile)
+		begin = WigConfig.read_dict_config(P.wigwamfile)
 		end = begin.copy()
 		if old is None:
 			old = begin
@@ -546,12 +542,12 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()}
 			if len(to_install) == 0:
 				break
-			end = end.patch(to_install)
+			end = WigConfig.patch_dict_config(end, to_install)
 
 		to_install = WigConfig(end).diff(WigConfig(begin))
 		if len(to_install) > 0:
-			end = begin.patch(to_install)
-			end.save(P.wigwamfile)
+			end = WigConfig.patch_dict_config(begin, to_install)
+			WigConfig.save_dict_config(P.wigwamfile, end)
 
 		return end
 
@@ -559,8 +555,8 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 
 	assert lint(old = old) is not None
 
-	requested = WigConfig(DictConfig.read(P.wigwamfile))
-	installed = WigConfig(DictConfig.read(P.wigwamfile_installed))
+	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
+	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested_installed_diff = set(requested.diff(installed).keys())
 	seeds = set(seeds)
 	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
@@ -585,8 +581,8 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 def remove(wig_names):
 	init()
 	
-	requested = DictConfig.read(P.wigwamfile)
-	installed = DictConfig.read(P.wigwamfile_installed)
+	requested = WigConfig.read_dict_config(P.wigwamfile)
+	installed = WigConfig.read_dict_config(P.wigwamfile_installed)
 	
 	for wig_name in wig_names:
 		if wig_name in installed:
@@ -597,8 +593,8 @@ def remove(wig_names):
 		if os.path.exists(src_dir):
 			shutil.rmtree(src_dir)
 			
-	requested.save(P.wigwamfile)
-	installed.save(P.wigwamfile_installed)
+	WigConfig.save_dict_config(P.wigwamfile, requested)
+	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 	
 def which(wigwamfile, prefix):
 	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.abspath(P.prefix) if prefix else os.path.dirname(P.root))
@@ -606,19 +602,17 @@ def which(wigwamfile, prefix):
 def status(verbose):
 	init()
 	
-	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(DictConfig.read(wigwamfile_path)).wigs.items()}
+	traces = lambda wigwamfile_path: {wig_name : wig.trace() for wig_name, wig in WigConfig(WigConfig.read_dict_config(wigwamfile_path)).wigs.items()}
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
-
 	format_version = lambda traces_dic, wig_name: json.dumps(traces_dic[wig_name]) if wig_name in traces_dic else ''	
-	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + {True: '{3}', False: '{3:.0}'}[verbose]
-
-	print(fmt.format('INSTALLED', 'NAME', 'VERSION', 'URI'))
+	
+	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + ('{3}' if verbose else '')
+	print(fmt.format('INSTALLED', 'NAME', 'VERSION'))
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
 		is_installed, is_conflicted = wig_name in installed, requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
-		uri = '' if is_conflicted else (installed[wig_name][DictConfig.URI] if DictConfig.URI in installed[wig_name] else 'N/A')
-		print(fmt.format('*' if is_installed else '', wig_name, version, uri))
+		print(fmt.format('*' if is_installed else '', wig_name, version))
 
 def clean(wigwamfile):
 	print 'Removing wigwam artefacts... ',
