@@ -161,8 +161,8 @@ class Wig(object):
 	
 	def fetch(self):
 		def git(target_dir, git_uri, git_commit = None, git_branch = None, git_tag = None, **ignored):
-			tag = git_tag or git_commit or git_branch
-			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(git_uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if tag is not None else [])
+			git_tag = git_tag or git_commit or git_branch
+			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(git_uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if git_tag is not None else [])
 
 		def tar(target_dir, tar_uri, version, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if tar_uri.endswith(e)][0])
