@@ -667,16 +667,6 @@ def run(dry, verbose, cmds = []):
 		print('The activate shell script does not exist yet. Run "wigwam build" first.')
 
 if __name__ == '__main__':
-	def unhandled_exception_hook(exc_type, exc_value, exc_traceback):
-		if issubclass(exc_type, KeyboardInterrupt):
-			print('<CTRL-C> pressed. Aborting.')
-			return
-
-		print('Unhandled exception occured! Please consider filing a bug report at {} along with the stack trace below:'.format(P.bugreport_page))
-		print(''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-		sys.exit(1)
-	sys.excepthook = unhandled_exception_hook
-
 	parser = argparse.ArgumentParser(prog = 'wigwam')
 	parser.add_argument('--root')
 	parser.add_argument('--repo', action = 'append', default = [])
@@ -759,9 +749,14 @@ if __name__ == '__main__':
 	local_root_dir = os.path.abspath(arg_root or '.')
 	global_root_dir = os.path.expanduser('~')
 	use_local = lambda local_file_name, local_cond: ((os.path.exists(os.path.join(local_root_dir, local_file_name)) or cmd == init or local_cond)) and not use_global
-	
 	root_dir = local_root_dir if use_local(P.wigwamdirname, arg_root is not None) else global_root_dir
 	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
-	P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamfilename), extra_repos = extra_repos)
-	
-	cmd(**args)
+
+	try:
+		P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamfilename), extra_repos = extra_repos)
+		cmd(**args)
+	except KeyboardInterrupt:
+		print('<CTRL-C> pressed. Aborting.')
+	except:
+		print('Unhandled exception occured! Please consider filing a bug report at {} along with the stack trace below:'.format(P.bugreport_page))
+		raise
