@@ -562,7 +562,7 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 			print('\nALL OK. KTHXBAI!')
 	
 def which(wigwamfile, prefix):
-	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.abspath(P.prefix) if prefix else os.path.dirname(P.root))
+	print(os.path.abspath(P.wigwamfile if wigwamfile else P.prefix if prefix else P.root))
 
 def status(verbose):
 	init()
