@@ -402,9 +402,9 @@ def install(wig_names, enable, disable, git, version, dry, env, verbose, reinsta
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	
 	WigConfig.save_dict_config(P.wigwamfile, end)
-	build(dry = dry, old = old, seeds = wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, verbose = verbose)
+	build(wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, old = old, verbose = verbose, dry = dry)
 
-def upgrade(wig_names, dry, recursive):
+def upgrade(wig_names, recursive, verbose, dry):
 	init()
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
@@ -417,9 +417,9 @@ def upgrade(wig_names, dry, recursive):
 			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
 			WigConfig.patch_dict_config(end, {wig_name : dict(fetch_params = fetch_params_new)})
 	WigConfig.save_dict_config(P.wigwamfile, end)
-	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = not recursive)
+	build(wig_names, install_only_seeds = not recursive, old = old, dry = dry, verbose = verbose)
 
-def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
+def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False, old = None, verbose = False, dry = False):
 	def gen_build_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
@@ -554,12 +554,9 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 		print('Dry run. Quitting.')
 		return
 
-	if len(installation_order) == 0:
-		print('0 packages to be reconfigured. Quitting.')
-	else:
-		print('Running installation script now:')
-		if 0 == subprocess.call(['bash', P.build_script] if not verbose else ['bash', '-xv', P.build_script]):
-			print('\nALL OK. KTHXBAI!')
+	print('Running installation script now:' if len(installation_order) > 0 else '0 packages to be reconfigured. Quitting.')
+	if os.path.exits(P.build_script) and 0 == subprocess.call(['bash'] + (['-xv'] if verbose else []) + [P.build_script]):
+		print('\nALL OK. KTHXBAI!')
 	
 def which(wigwamfile, prefix):
 	print(os.path.abspath(P.wigwamfile if wigwamfile else P.prefix if prefix else P.root))
@@ -665,6 +662,7 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = upgrade)
 	cmd.add_argument('wig_names', nargs = '*')
 	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--verbose', action = 'store_true')
 	cmd.add_argument('--recursive', action = 'store_true')
 	
 	cmd = subparsers.add_parser('run')
