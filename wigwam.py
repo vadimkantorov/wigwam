@@ -204,9 +204,10 @@ class WigConfig(object):
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
 		self.env = dict_config.pop('_env', {})
+		self.dict_config = lambda self: dict_config
 
 		self.wigs = {}
-		for wig_name, wig_dict_config in dict_config.items():
+		for wig_name, wig_dict_config in self.dict_config().items():
 			wig = WigConfig.find_and_construct_wig(wig_name)
 			wig.load_dict_config(wig_dict_config, self.env)
 			for dep_wig_name in wig.dependencies:
@@ -238,18 +239,15 @@ class WigConfig(object):
 	@staticmethod
 	def patch_dict_config(dict_config, diff):
 		dict_config = dict_config.copy()
-
 		if '_env' in diff:
 			dict_config['_env'] = dict(dict_config.get('_env', {}).items() + diff.pop('_env', {}).items())
 		for wig_name, wig_dict_config in diff.items():
 			dict_config[wig_name] = wig_dict_config #if wig_name not in dict_config
-
 		return dict_config
 
 	@staticmethod
 	def find_and_construct_wig(wig_name):
-		#wig_class = [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
-		wig_class = [s for k, s in {}.items() if wig_name.startswith(k)]
+		wig_class = [s for k, s in {}.items() if wig_name.startswith(k)] # [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
@@ -258,51 +256,28 @@ class WigConfig(object):
 				break
 			except:
 				continue
-
-		if not wig_class:
-			print('Package [{}] is not found. Quitting.'.format(wig_name))
-			sys.exit(1)
-
+		assert wig_class, 'Package [{}] is not found'.format(wig_name)
 		return wig_class[0](wig_name)
 
-	@staticmethod
-	def dfs(graph, seeds, on_black = lambda wig_name: None):
-		visited = set()
-		installation_order = []
-		def dfs_(u):
-			visited.add(u)
-			for v in graph[u]:
-				if v not in visited:
-					dfs_(v)
-			on_black(u)
-		
-		for	u in seeds:
-			if u not in visited:
-				dfs_(u)
-		return visited
-
-	@staticmethod
-	def topological_sort(graph):
-		installation_order = []
-		WigConfig.dfs(graph, graph.keys(), lambda wig_name: installation_order.append(wig_name))
-		return installation_order
-
 	def compute_installation_order(self, reconfigured, up = False, down = False, wig_name_subset = None):
-		if wig_name_subset is None:
-			wig_name_subset = self.wigs.keys()
+		def dfs(graph, seeds, on_black = lambda wig_name: None):
+			visited, visited_order_reversed = set(), []
+			def dfs_(u):
+				visited.add(u)
+				for v in graph[u]:
+					if v not in visited:
+						dfs_(v)
+				visited_order_reversed.append(u)
+			for	u in seeds:
+				if u not in visited:
+					dfs_(u)
+			return visited_order_reversed
 
-		if up:
-			graph = {wig_name: [k for k in wig_name_subset if wig_name in self.wigs[k].dependencies_] for wig_name in wig_name_subset}
-		else:
-			graph = {wig_name: filter(lambda x: x in wig_name_subset, self.wigs[wig_name].dependencies_) for wig_name in wig_name_subset}
-		
-		to_install = WigConfig.dfs(graph, reconfigured)
-		graph = {wig_name : filter(lambda x: x in to_install, self.wigs[wig_name].dependencies_) for wig_name in to_install}
-		return WigConfig.topological_sort(graph)
+		wig_name_subset = wig_name_subset or self.wigs.keys()
+		graph = {wig_name: [k for k in wig_name_subset if wig_name in self.wigs[k].dependencies_] for wig_name in wig_name_subset} if up else {wig_name: filter(lambda x: x in wig_name_subset, self.wigs[wig_name].dependencies_) for wig_name in wig_name_subset}
+		graph = {wig_name : filter(lambda x: x in to_install, self.wigs[wig_name].dependencies_) for wig_name in WigConfig.dfs(graph, reconfigured)}
+		return WigConfig.dfs(graph, graph.keys())
 	
-	def get_immediate_unsatisfied_dependencies(self):
-		return {x : [] for x in set((dep_wig_name for wig in self.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in self.wigs.keys()))}
-
 	def diff(self, graph):
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
@@ -311,6 +286,16 @@ class WigConfig(object):
 				to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
 			
 		return DictConfig(to_install)
+
+	def get_unsatisfied_dependencies(self):
+		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs.keys()))}
+		end = self.dict_config().copy()
+		while True:
+			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
+			if len(to_install) == 0:
+				break
+			end = WigConfig.patch_dict_config(end, to_install)
+		return WigConfig(end).diff(self)
 
 #class CmakeWig(Wig):
 #	def __init__(self, name):
@@ -381,6 +366,24 @@ class WigConfig(object):
 #	def install(self):
 #		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user {}'.format(PipWig.PIP_PATH, self.name[len('pip-'):] if self.wheel_path is None else self.wheel_path)]
 
+def remove(wig_names):
+	init()
+	
+	requested = WigConfig.read_dict_config(P.wigwamfile)
+	installed = WigConfig.read_dict_config(P.wigwamfile_installed)
+	
+	for wig_name in wig_names:
+		if wig_name in installed:
+			print('Package [{}] is already installed, artefacts will not be removed.'.format(wig_name))
+		requested.pop(wig_name, None)
+		installed.pop(wig_name, None)
+		src_dir = os.path.join(P.src_tree, wig_name)
+		if os.path.exists(src_dir):
+			shutil.rmtree(src_dir)
+			
+	WigConfig.save_dict_config(P.wigwamfile, requested)
+	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
+
 def install(wig_names, enable, disable, git, version, dry, env, verbose, reinstall, only):
 	init()
 	
@@ -417,11 +420,11 @@ def upgrade(wig_names, dry, recursive):
 	build(dry = dry, old = old, seeds = wig_names, install_only_seeds = not recursive)
 
 def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False):
-	def gen_installation_script(installation_script_path, wigs, env, installation_order):
+	def gen_build_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
 
-		if not installation_order:
+		if len(installation_order) == 0:
 			return
 
 		print('{} packages to be installed in the order below:'.format(len(installation_order)))
@@ -532,40 +535,20 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 		with open(P.activate_sh, 'w') as out:
 			out.write('\n'.join(activate_sh))
 
-	def lint(old = None):
-		begin = WigConfig.read_dict_config(P.wigwamfile)
-		end = begin.copy()
-		if old is None:
-			old = begin
-
-		while True:
-			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in WigConfig(end).get_immediate_unsatisfied_dependencies()}
-			if len(to_install) == 0:
-				break
-			end = WigConfig.patch_dict_config(end, to_install)
-
-		to_install = WigConfig(end).diff(WigConfig(begin))
-		if len(to_install) > 0:
-			end = WigConfig.patch_dict_config(begin, to_install)
-			WigConfig.save_dict_config(P.wigwamfile, end)
-
-		return end
-
 	init()
-
-	assert lint(old = old) is not None
-
+	begin = WigConfig.read_dict_config(P.wigwamfile)
+	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(begin, WigConfig(begin).get_unsatisfied_dependencies()))
 	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
+
 	requested_installed_diff = set(requested.diff(installed).keys())
 	seeds = set(seeds)
 	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
-
 	to_install = requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff
-
 	installation_order = requested.compute_installation_order(to_install, up = True, wig_name_subset = wig_name_subset)
+
 	gen_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
-	gen_installation_script(P.build_script, requested.wigs, requested.env, installation_order)
+	gen_build_script(P.build_script, requested.wigs, requested.env, installation_order)
 
 	if dry:
 		print('Dry run. Quitting.')
@@ -577,24 +560,6 @@ def build(dry, old = None, seeds = [], force_seeds_reinstall = False, install_on
 		print('Running installation script now:')
 		if 0 == subprocess.call(['bash', P.build_script] if not verbose else ['bash', '-xv', P.build_script]):
 			print('\nALL OK. KTHXBAI!')
-
-def remove(wig_names):
-	init()
-	
-	requested = WigConfig.read_dict_config(P.wigwamfile)
-	installed = WigConfig.read_dict_config(P.wigwamfile_installed)
-	
-	for wig_name in wig_names:
-		if wig_name in installed:
-			print('Package [{}] is already installed, artefacts will not be removed.'.format(wig_name))
-		requested.pop(wig_name, None)
-		installed.pop(wig_name, None)
-		src_dir = os.path.join(P.src_tree, wig_name)
-		if os.path.exists(src_dir):
-			shutil.rmtree(src_dir)
-			
-	WigConfig.save_dict_config(P.wigwamfile, requested)
-	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 	
 def which(wigwamfile, prefix):
 	print(os.path.abspath(P.wigwamfile) if wigwamfile else os.path.abspath(P.prefix) if prefix else os.path.dirname(P.root))
