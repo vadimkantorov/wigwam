@@ -213,8 +213,8 @@ class WigConfig(object):
 			for dep_wig_name in wig.dependencies:
 				wig.require(dep_wig_name)
 			wig.setup()
-			wig.enabled_features = wig.enabled_features + wig_dict_config.get('enabled_features', [])
-			wig.disabled_features = wig.disabled_features + wig_dict_config.get('disabled_features', [])
+			wig.enabled_features += wig_dict_config.get('enabled_features', [])
+			wig.disabled_features += wig_dict_config.get('disabled_features', [])
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs.keys():
@@ -384,11 +384,10 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, enable, disable, git, version, dry, env, verbose, reinstall, only):
+def install(wig_names, enable, disable, git, version, only, dry, env, verbose, only):
 	init()
 	
-	old = WigConfig.read_dict_config(P.wigwamfile)
-	end = WigConfig.patch_dict_config(old, dict(_env = env))
+	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
 	for wig_name in wig_names:
 		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
 		if enable:
@@ -402,7 +401,7 @@ def install(wig_names, enable, disable, git, version, dry, env, verbose, reinsta
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	
 	WigConfig.save_dict_config(P.wigwamfile, end)
-	build(wig_names, force_seeds_reinstall = reinstall, install_only_seeds = only, old = old, verbose = verbose, dry = dry)
+	build(wig_names, install_only_seeds = only, verbose = verbose, dry = dry)
 
 def upgrade(wig_names, recursive, verbose, dry):
 	init()
@@ -417,9 +416,9 @@ def upgrade(wig_names, recursive, verbose, dry):
 			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
 			WigConfig.patch_dict_config(end, {wig_name : dict(fetch_params = fetch_params_new)})
 	WigConfig.save_dict_config(P.wigwamfile, end)
-	build(wig_names, install_only_seeds = not recursive, old = old, dry = dry, verbose = verbose)
+	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
-def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False, old = None, verbose = False, dry = False):
+def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False, dry = False):
 	def gen_build_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
