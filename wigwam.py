@@ -384,7 +384,7 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, enable, disable, git, version, only, dry, env, verbose, only):
+def install(wig_names, enable, disable, git, version, env, only, verbose, dry):
 	init()
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
@@ -403,7 +403,7 @@ def install(wig_names, enable, disable, git, version, only, dry, env, verbose, o
 	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(wig_names, install_only_seeds = only, verbose = verbose, dry = dry)
 
-def upgrade(wig_names, recursive, verbose, dry):
+def upgrade(wig_names, force, recursive, verbose, dry):
 	init()
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
@@ -648,7 +648,6 @@ if __name__ == '__main__':
 	group.add_argument('--git', nargs = '?', const = True)
 	group.add_argument('--version')
 	cmd.add_argument('--env', '-D', action = type('', (argparse.Action, ), dict(__call__ = lambda a, p, n, v, o: getattr(n, a.dest).update(dict([v.split('=')])))), default = {})
-	cmd.add_argument('--reinstall', action = 'store_true')
 	cmd.add_argument('--only', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	
@@ -661,6 +660,7 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = upgrade)
 	cmd.add_argument('wig_names', nargs = '*')
 	cmd.add_argument('--dry', action = 'store_true')
+	cmd.add_argument('--force', '-f', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	cmd.add_argument('--recursive', action = 'store_true')
 	
