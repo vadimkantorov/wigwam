@@ -384,7 +384,7 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, enable, disable, git, version, env, only, verbose, dry):
+def install(wig_names, enable, disable, git, version, env, force, verbose, dry):
 	init()
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
@@ -403,7 +403,7 @@ def install(wig_names, enable, disable, git, version, env, only, verbose, dry):
 	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(wig_names, install_only_seeds = only, verbose = verbose, dry = dry)
 
-def upgrade(wig_names, force, recursive, verbose, dry):
+def upgrade(wig_names, recursive, verbose, dry):
 	init()
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
@@ -543,8 +543,7 @@ def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False,
 	requested_installed_diff = set(requested.diff(installed).keys())
 	seeds = set(seeds)
 	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
-	to_install = requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff
-	installation_order = requested.compute_installation_order(to_install, up = True, wig_name_subset = wig_name_subset)
+	installation_order = requested.compute_installation_order(requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff, up = True, wig_name_subset = wig_name_subset)
 
 	gen_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
 	gen_build_script(P.build_script, requested.wigs, requested.env, installation_order)
@@ -640,7 +639,6 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('install')
 	cmd.set_defaults(func = install)
-	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('wig_names', nargs = '+')
 	cmd.add_argument('--enable', nargs = '+', default = [])
 	cmd.add_argument('--disable', nargs = '+', default = [])
@@ -648,7 +646,8 @@ if __name__ == '__main__':
 	group.add_argument('--git', nargs = '?', const = True)
 	group.add_argument('--version')
 	cmd.add_argument('--env', '-D', action = type('', (argparse.Action, ), dict(__call__ = lambda a, p, n, v, o: getattr(n, a.dest).update(dict([v.split('=')])))), default = {})
-	cmd.add_argument('--only', action = 'store_true')
+	cmd.add_argument('--force', action = 'store_true')
+	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	
 	cmd = subparsers.add_parser('build')
@@ -660,7 +659,6 @@ if __name__ == '__main__':
 	cmd.set_defaults(func = upgrade)
 	cmd.add_argument('wig_names', nargs = '*')
 	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--force', '-f', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	cmd.add_argument('--recursive', action = 'store_true')
 	
