@@ -410,8 +410,10 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 					echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"
 				}
 			'''.replace('{}', P.activate_sh))
-			w(dump_env)
-			w(S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order]))
+			w([
+				dump_env,
+				S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order])
+			])
 
 			update_wigwamfile_installed = lambda d:	w('''cat <<"EOF" | update_wigwamfile_installed "{}"\n{}\nEOF\n'''.format(os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
 
