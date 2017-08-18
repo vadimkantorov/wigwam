@@ -26,13 +26,13 @@ class P:
 		P.wigwamfile = wigwamfile
 		P.src_tree = os.path.join(P.root, 'src')
 		P.prefix = os.path.join(P.root, 'prefix')
-		P.log_root = os.path.join('log')
-		P.tar_root = os.path.join('tar')
-		P.deb_root = os.path.join('deb')
-		P.debug_root = os.path.join('debug')
-		P.activate_sh = os.path.join('activate.sh')
-		P.build_script = os.path.join('build.generated.sh')
-		P.wigwamfile_installed = os.path.join(P.wigwamfilename + '.installed')
+		P.log_root = os.path.join(P.root, 'log')
+		P.tar_root = os.path.join(P.root, 'tar')
+		P.deb_root = os.path.join(P.root, 'deb')
+		P.debug_root = os.path.join(P.root, 'debug')
+		P.activate_sh = os.path.join(P.root, 'activate.sh')
+		P.build_script = os.path.join(P.root, 'build.generated.sh')
+		P.wigwamfile_installed = os.path.join(P.root, P.wigwamfilename + '.installed')
 				
 		P.prefix_deb = os.path.join(P.prefix, 'deb')
 		P.prefix_python = os.path.join(P.prefix, 'python')
@@ -204,7 +204,7 @@ class WigConfig(object):
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
 		self.env = dict_config.pop('_env', {})
-		self.dict_config = lambda self: dict_config
+		self.dict_config = lambda: dict_config
 
 		self.wigs = {}
 		for wig_name, wig_dict_config in self.dict_config().items():
@@ -259,33 +259,29 @@ class WigConfig(object):
 		assert wig_class, 'Package [{}] is not found'.format(wig_name)
 		return wig_class[0](wig_name)
 
-	def compute_installation_order(self, reconfigured, up = False, down = False, wig_name_subset = None):
-		def dfs(graph, seeds, on_black = lambda wig_name: None):
-			visited, visited_order_reversed = set(), []
-			def dfs_(u):
-				visited.add(u)
-				for v in graph[u]:
-					if v not in visited:
-						dfs_(v)
-				visited_order_reversed.append(u)
-			for	u in seeds:
-				if u not in visited:
-					dfs_(u)
-			return visited_order_reversed
+	def compute_installation_order(self):
+		def dfs(k):
+			visited = []
+			def dfs_(v):
+				visited.append(v)
+				for u in self.wigs[v].dependencies_:
+					if u not in visited:
+						dfs_(u)
+			for v in self.wigs:
+				if v not in visited:
+					dfs_(v)
+			return visited
 
-		wig_name_subset = wig_name_subset or self.wigs.keys()
-		graph = {wig_name: [k for k in wig_name_subset if wig_name in self.wigs[k].dependencies_] for wig_name in wig_name_subset} if up else {wig_name: filter(lambda x: x in wig_name_subset, self.wigs[wig_name].dependencies_) for wig_name in wig_name_subset}
-		graph = {wig_name : filter(lambda x: x in to_install, self.wigs[wig_name].dependencies_) for wig_name in WigConfig.dfs(graph, reconfigured)}
-		return WigConfig.dfs(graph, graph.keys())
-	
+		closure = {wig_name : dfs(wig_name) for wig_name in self.wigs}
+		return sorted(self.wigs, cmp = lambda l, r: -1 if l in closure[r] else 1 if r in closure[l] else cmp(l.lower(), r.lower()))
+
 	def diff(self, graph):
 		to_install = {}
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
 			if wig.trace() != (other.trace() if other is not None else None):
 				to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
-			
-		return DictConfig(to_install)
+		return to_install
 
 	def get_unsatisfied_dependencies(self):
 		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs.keys()))}
@@ -540,9 +536,8 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 
-	requested_installed_diff = set(requested.diff(installed).keys())
-	wig_name_subset = seeds if install_only_seeds else requested_installed_diff
-	#installation_order = requested.compute_installation_order(requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff, up = True, wig_name_subset = wig_name_subset)
+	wig_name_subset = set(requested.diff(installed).keys()) | set(seeds) if not install_only_seeds else set(seeds)
+	installation_order = filter(lambda wig_name: wig_name in wig_name_subset, requested.compute_installation_order())
 
 	gen_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
 	gen_build_script(P.build_script, requested.wigs, requested.env, installation_order)
@@ -552,7 +547,7 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 		return
 
 	print('Running installation script now:' if len(installation_order) > 0 else '0 packages to be reconfigured. Quitting.')
-	if os.path.exits(P.build_script) and 0 == subprocess.call(['bash'] + (['-xv'] if verbose else []) + [P.build_script]):
+	if os.path.exists(P.build_script) and 0 == subprocess.call(['bash'] + (['-xv'] if verbose else []) + [P.build_script]):
 		print('\nALL OK. KTHXBAI!')
 	
 def which(wigwamfile, prefix):
@@ -565,7 +560,11 @@ def status(verbose):
 	requested, installed = map(traces, [P.wigwamfile, P.wigwamfile_installed])
 	format_version = lambda traces_dic, wig_name: json.dumps(traces_dic[wig_name]) if wig_name in traces_dic else ''	
 	
-	fmt = '{0:9}\t{1:-20}\t{2:-10}\t' + ('{3}' if verbose else '')
+	if len(requested) == 0 and len(installed) == 0:
+		print('No packages installed')
+		return
+
+	fmt = '{0:9}\t{1:>20}\t{2:>10}\t' + ('{3}' if verbose else '')
 	print(fmt.format('INSTALLED', 'NAME', 'VERSION'))
 	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
@@ -574,14 +573,12 @@ def status(verbose):
 		print(fmt.format('*' if is_installed else '', wig_name, version))
 
 def clean(wigwamfile):
-	print 'Removing wigwam artefacts... ',
 	for f in P.generated_files + ([P.wigwamfile] if wigwamfile else []):
 		if os.path.exists(f):
 			os.remove(f)
 	for d in P.artefact_dirs:
 		if os.path.exists(d):
 			shutil.rmtree(d)
-	print('ok')
 
 def init(wigwamfile = None):
 	for d in P.all_dirs:
@@ -712,7 +709,7 @@ if __name__ == '__main__':
 	wigwamfile_dir = local_root_dir if use_local(P.wigwamfilename, False) else global_root_dir
 
 	try:
-		P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamfilename), extra_repos = extra_repos)
+		P.init(root = os.path.join(root_dir, P.wigwamdirname), wigwamfile = os.path.join(root_dir, P.wigwamdirname, P.wigwamfilename), extra_repos = extra_repos)
 		cmd(**args)
 	except KeyboardInterrupt:
 		print('<CTRL-C> pressed. Aborting.')
