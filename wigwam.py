@@ -424,19 +424,23 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 					d('source "{}"'.format(P.activate_sh))
 					d([dump_env])
 
-					w('PACKAGE_NAME={}'.format(wig.name))
-					w('PREFIX="{}"'.format(P.prefix))
-					w('LOGBASE="{}"'.format(P.log_base(wig.name)))
-					w('printf "\\n$PACKAGE_NAME:\\n"')
-					w(S.mkdir_p('$LOGBASE'))
-					w('cd "{}"'.format(P.root))
+					w([
+						'PACKAGE_NAME={}'.format(wig.name),
+						'PREFIX="{}"'.format(P.prefix),
+						'LOGBASE="{}"'.format(P.log_base(wig.name)),
+						'printf "\\n$PACKAGE_NAME:\\n"',
+						S.mkdir_p('$LOGBASE'),
+						'cd "{}"'.format(P.root)
+					])
 					for stage, skip_stages in [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
 						hook = d if stage != 'fetch' else lambda *ignored : None
 						u = lambda x: w(x, '\t') or hook(x, '\t')
 						if all([stage not in wig.skip_stages for stage in skip_stages]):
-							w('printf "%14s...  " {}'.format(stage.capitalize()))
-							w('LOG="$LOGBASE/{}.txt"'.format(stage))
-							w('(')
+							w([
+								'printf "%14s...  " {}'.format(stage.capitalize()),
+								'LOG="$LOGBASE/{}.txt"'.format(stage),
+								'('
+							])
 
 							hook('(', '')
 							u(getattr(wig, 'before_' + stage))
@@ -445,12 +449,16 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 							u(getattr(wig, 'after_' + stage))
 							hook(')', '')
 
-							w(') > "$LOG" 2>&1')
-							w('print_ok_toc')
-							w(S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory))) if stage == 'fetch' else '')
+							w([
+								') > "$LOG" 2>&1',
+								'print_ok_toc',
+								S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory))) if stage == 'fetch' else ''
+							])
 
-					w(S.mkdir_p(wig.paths.src_dir))
-					w(S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh')))
+					w([
+						S.mkdir_p(wig.paths.src_dir))
+						S.ln(os.path.abspath(debug_script_path), os.path.join(wig.paths.src_dir, 'wigwam_debug.sh'))
+					])
 					update_wigwamfile_installed({wig_name : wig.trace()})
 			w('ALLOK=1')
 		
