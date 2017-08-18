@@ -401,7 +401,7 @@ def install(wig_names, enable, disable, git, version, env, force, verbose, dry):
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	
 	WigConfig.save_dict_config(P.wigwamfile, end)
-	build(wig_names, install_only_seeds = only, verbose = verbose, dry = dry)
+	build(wig_names, install_only_seeds = force, verbose = verbose, dry = dry)
 
 def upgrade(wig_names, recursive, verbose, dry):
 	init()
@@ -418,7 +418,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
-def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False, verbose = False, dry = False):
+def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 	def gen_build_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
@@ -541,9 +541,8 @@ def build(seeds = [], force_seeds_reinstall = False, install_only_seeds = False,
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 
 	requested_installed_diff = set(requested.diff(installed).keys())
-	seeds = set(seeds)
-	wig_name_subset = seeds if install_only_seeds else (requested_installed_diff | (seeds if force_seeds_reinstall else set([])))
-	installation_order = requested.compute_installation_order(requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff, up = True, wig_name_subset = wig_name_subset)
+	wig_name_subset = seeds if install_only_seeds else requested_installed_diff
+	#installation_order = requested.compute_installation_order(requested.compute_installation_order(seeds, down = True, wig_name_subset = wig_name_subset) if seeds and seeds <= requested_installed_diff else requested_installed_diff, up = True, wig_name_subset = wig_name_subset)
 
 	gen_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
 	gen_build_script(P.build_script, requested.wigs, requested.env, installation_order)
