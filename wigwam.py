@@ -311,7 +311,7 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, enable, disable, git, version, env, force, verbose, dry):
+def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry):
 	init()
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
@@ -582,7 +582,8 @@ if __name__ == '__main__':
 	
 	cmd = subparsers.add_parser('install')
 	cmd.set_defaults(func = install)
-	cmd.add_argument('wig_names', nargs = '+')
+	cmd.add_argument('wig_names', nargs = '*')
+	cmd.add_argument('--wigwamfile')
 	cmd.add_argument('--enable', nargs = '+', default = [])
 	cmd.add_argument('--disable', nargs = '+', default = [])
 	group = cmd.add_mutually_exclusive_group()
@@ -593,11 +594,6 @@ if __name__ == '__main__':
 	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
 	
-	cmd = subparsers.add_parser('build')
-	cmd.set_defaults(func = build)
-	cmd.add_argument('--dry', action = 'store_true')
-	cmd.add_argument('--verbose', action = 'store_true')
-
 	cmd = subparsers.add_parser('upgrade')
 	cmd.set_defaults(func = upgrade)
 	cmd.add_argument('wig_names', nargs = '*')
