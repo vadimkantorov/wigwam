@@ -327,8 +327,12 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	WigConfig.save_dict_config(P.wigwamfile, end)
+
 	wig_name_subset = set(seeds) if install_only_seeds else set(requested.diff(installed).keys()) | set(seeds)
-	build(wig_names, install_only_seeds = force, verbose = verbose, dry = dry)
+	begin = WigConfig.read_dict_config(P.wigwamfile)
+	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(begin, WigConfig(begin).get_unsatisfied_dependencies()))
+
+	build(wig_names, verbose = verbose, dry = dry)
 
 def upgrade(wig_names, recursive, verbose, dry):
 	init()
@@ -478,12 +482,7 @@ def build(wig_names, verbose = False, dry = False):
 		with open(P.activate_sh, 'w') as out:
 			out.write('\n'.join(activate_sh))
 
-	init()
-	begin = WigConfig.read_dict_config(P.wigwamfile)
-	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(begin, WigConfig(begin).get_unsatisfied_dependencies()))
 	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
-	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
-
 	installation_order = filter(lambda wig_name: wig_name in wig_names, requested.compute_installation_order())
 	write_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
 	write_build_script(P.build_script, requested.wigs, requested.env, installation_order)
@@ -491,7 +490,6 @@ def build(wig_names, verbose = False, dry = False):
 	if dry:
 		print('Dry run. Quitting.')
 		return
-
 	print('Running installation script now:' if len(installation_order) > 0 else '0 packages to be reconfigured. Quitting.')
 	if os.path.exists(P.build_script) and 0 == subprocess.call(['bash'] + (['-xv'] if verbose else []) + [P.build_script]):
 		print('\nALL OK. KTHXBAI!')
