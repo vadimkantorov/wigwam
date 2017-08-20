@@ -326,8 +326,8 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 		if version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
-	
 	WigConfig.save_dict_config(P.wigwamfile, end)
+	wig_name_subset = set(seeds) if install_only_seeds else set(requested.diff(installed).keys()) | set(seeds)
 	build(wig_names, install_only_seeds = force, verbose = verbose, dry = dry)
 
 def upgrade(wig_names, recursive, verbose, dry):
@@ -345,7 +345,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 	WigConfig.save_dict_config(P.wigwamfile, end)
 	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
-def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
+def build(wig_names, verbose = False, dry = False):
 	def write_build_script(installation_script_path, wigs, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
@@ -404,13 +404,14 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 
 		update_wigwamfile_installed(dict(_env = env))
 		for wig in map(wigs.get, installation_order):
+			stage_skip_stages = [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]
 			debug_script, debug_script_path = [], P.debug_script(wig.name)
 			debug_script += [
 				'''PREFIX="{}"'''.format(os.path.abspath(P.prefix)),
 				'source "{}"'.format(P.activate_sh),
 				S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 			]
-			for stage, skip_stages in [('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
+			for stage, skip_stages in stage_skip_stages[1:]:
 				if all([stage not in wig.skip_stages for stage in skip_stages]):
 					debug_script += ['(']
 					debug_script += getattr(wig, 'before_' + stage)
@@ -426,7 +427,7 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 				S.mkdir_p('$LOGBASE'),
 				'cd "{}"'.format(P.root)
 			]
-			for stage, skip_stages in [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]:
+			for stage, skip_stages in stage_skip_stages:
 				if all([stage not in wig.skip_stages for stage in skip_stages]):
 					build_script += [
 						'printf "%14s...  " {}'.format(stage.capitalize()),
@@ -483,9 +484,7 @@ def build(seeds = [], install_only_seeds = False, verbose = False, dry = False):
 	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 
-	wig_name_subset = set(requested.diff(installed).keys()) | set(seeds) if not install_only_seeds else set(seeds)
-	installation_order = filter(lambda wig_name: wig_name in wig_name_subset, requested.compute_installation_order())
-
+	installation_order = filter(lambda wig_name: wig_name in wig_names, requested.compute_installation_order())
 	write_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
 	write_build_script(P.build_script, requested.wigs, requested.env, installation_order)
 
