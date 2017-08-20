@@ -326,11 +326,13 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 		if version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
-	WigConfig.save_dict_config(P.wigwamfile, end)
+	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).get_unsatisfied_dependencies()))
 
-	wig_name_subset = set(seeds) if install_only_seeds else set(requested.diff(installed).keys()) | set(seeds)
-	begin = WigConfig.read_dict_config(P.wigwamfile)
-	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(begin, WigConfig(begin).get_unsatisfied_dependencies()))
+	if not force:
+		installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
+		dependent = WigConfig(end)
+		wig_name_subset = set(seeds) if install_only_seeds else set(requested.diff(installed).keys()) | set(seeds)
+		begin = WigConfig.read_dict_config(P.wigwamfile)
 
 	build(wig_names, verbose = verbose, dry = dry)
 
