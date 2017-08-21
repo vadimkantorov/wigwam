@@ -217,7 +217,7 @@ class WigConfig(object):
 			wig.disabled_features += wig_dict_config.get('disabled_features', [])
 			self.wigs[wig_name] = wig
 
-		for wig_name in self.wigs.keys():
+		for wig_name in self.wigs:
 			self.wigs[wig_name].process_feature_hooks()
 
 		flatten = lambda xs: list(itertools.chain(*xs))
@@ -263,7 +263,7 @@ class WigConfig(object):
 		transitive_closure = {wig_name : self.find_dependencies([wig_name]) for wig_name in self.wigs}
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
-	def find_dependencies(self, wig_names):
+	def find_dependencies(self, wig_names, dependencies = True):
 		def dfs(k):
 			visited = []
 			def dfs_(v):
@@ -286,7 +286,7 @@ class WigConfig(object):
 					to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
 			return to_install
 
-		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs.keys()))}
+		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs))}
 		end = self.dict_config().copy()
 		while True:
 			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
@@ -332,7 +332,7 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested = WigConfig(end)
-	to_build = (set(requested.find_dependencies(wig_names, dependencies = True)) - set(installed.keys())) | (set(wig_names) if force else set())
+	to_build = (set(requested.find_dependencies(wig_names, dependencies = True)) - set(installed.wigs)) | (set(wig_names) if force else set())
 
 	build(to_build, verbose = verbose, dry = dry)
 
@@ -341,7 +341,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
 	end = old.copy()
-	wig_names = wig_names or filter(lambda x: x != '_env', old.keys())
+	wig_names = wig_names or filter(lambda x: x != '_env', old)
 	for wig_name in wig_names:
 		fetch_params_old = old.get(wig_name, {}).get('fetch_params')
 		fetch_params_new = WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')
@@ -479,7 +479,8 @@ def build(wig_names, verbose = False, dry = False):
 				echo "CPATH=$CPATH"
 				echo "LIBRARY_PATH=$LIBRARY_PATH"
 				echo "g++ -print-search-dirs: $(g++ -print-search-dirs)"
-			}'''
+			}
+			'''
 		]
 		with open(P.activate_sh, 'w') as out:
 			out.write('\n'.join(activate_sh))
@@ -512,7 +513,7 @@ def status(verbose):
 
 	fmt = '{0:9}\t{1:>20}\t{2:>10}\t' + ('{3}' if verbose else '')
 	print(fmt.format('INSTALLED', 'NAME', 'VERSION'))
-	for wig_name in sorted(set(requested.keys()) | set(installed.keys())):
+	for wig_name in sorted(set(requested) | set(installed)):
 		requested_version, installed_version = [format_version(t, wig_name) for t in [requested, installed]]
 		is_installed, is_conflicted = wig_name in installed, requested_version != installed_version
 		version = requested_version if not is_installed else (installed_version if not is_conflicted else '*CONFLICT*')
