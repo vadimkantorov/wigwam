@@ -258,34 +258,33 @@ class WigConfig(object):
 				continue
 		assert wig_class, 'Package [{}] is not found'.format(wig_name)
 		return wig_class[0](wig_name)
+		
+	def diff(self, graph):
+		to_install = {}
+		for wig_name, wig in self.wigs.items():
+			other = graph.wigs.get(wig_name)
+			if wig.trace() != (other.trace() if other is not None else None):
+				to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
+		return to_install
 
 	def compute_installation_order(self):
 		transitive_closure = {wig_name : self.find_dependencies([wig_name]) for wig_name in self.wigs}
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
-	def find_dependencies(self, wig_names, dependencies = True):
-		def dfs(k):
-			visited = []
-			def dfs_(v):
-				visited.append(v)
-				for u in self.wigs[v].dependencies_:
-					if u not in visited:
-						dfs_(u)
-			for v in self.wigs:
-				if v not in visited:
-					dfs_(v)
-			return visited
-		return set(itertools.chain.from_iterable(dfs(wig_name) for wig_name in wig_names))
+	def find_dependencies(self, wig_names, dependencies = True, dependent = False):
+		graph = {wig_name : self.wigs[wig_name].dependencies_ for wig_name in self.wigs} if dependencies else {wig_name : filter(lambda w: wig_name in self.wigs[w].dependencies_, self.wigs) for wig_name in self.wigs}
+		visited = set()
+		def dfs(v):
+			visited.add(v)
+			for u in graph[v]:
+				if u not in visited:
+					dfs_(u)
+		for v in wig_names:
+			if v not in visited:
+				dfs(v)
+		return visited
 
 	def find_unsatisfied_dependencies(self):
-		def diff(self, graph):
-			to_install = {}
-			for wig_name, wig in self.wigs.items():
-				other = graph.wigs.get(wig_name)
-				if wig.trace() != (other.trace() if other is not None else None):
-					to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
-			return to_install
-
 		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs))}
 		end = self.dict_config().copy()
 		while True:
@@ -293,7 +292,7 @@ class WigConfig(object):
 			if len(to_install) == 0:
 				break
 			end = WigConfig.patch_dict_config(end, to_install)
-		return diff(WigConfig(end), self)
+		return WigConfig(end).diff(self)
 
 def remove(wig_names):
 	init()
@@ -332,7 +331,9 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested = WigConfig(end)
-	to_build = (set(requested.find_dependencies(wig_names, dependencies = True)) - set(installed.wigs)) | (set(wig_names) if force else set())
+	
+	dependencies = requested.find_dependencies(wig_names, dependencies = True)
+	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed))) | (set(wig_names) if force else set())
 
 	build(to_build, verbose = verbose, dry = dry)
 
@@ -349,6 +350,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
 			WigConfig.patch_dict_config(end, {wig_name : dict(fetch_params = fetch_params_new)})
 	WigConfig.save_dict_config(P.wigwamfile, end)
+
 	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
 def build(wig_names, verbose = False, dry = False):
