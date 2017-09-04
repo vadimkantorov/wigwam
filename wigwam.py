@@ -331,9 +331,8 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested = WigConfig(end)
-	
 	dependencies = requested.find_dependencies(wig_names, dependencies = True)
-	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed))) | (set(wig_names) if force else set())
+	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed)) + (wig_names if force else []))
 
 	build(to_build, verbose = verbose, dry = dry)
 
@@ -341,15 +340,17 @@ def upgrade(wig_names, recursive, verbose, dry):
 	init()
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
-	end = old.copy()
-	wig_names = wig_names or filter(lambda x: x != '_env', old)
-	for wig_name in wig_names:
-		fetch_params_old = old.get(wig_name, {}).get('fetch_params')
-		fetch_params_new = WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')
-		if fetch_params_new != fetch_params_old:
-			print(('Going to upgrade package [{0}]: {1} -> {2}' if fetch_params_old is not None else 'Going to install package [{0}]: {2}').format(wig_name, json.dumps(fetch_params_old), json.dumps(fetch_params_new)))
-			WigConfig.patch_dict_config(end, {wig_name : dict(fetch_params = fetch_params_new)})
+	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
+	print('Going to upgrade packages:' if len(patch) > 0 else '')
+	for wig_name in patch:
+		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params'])))
+	end = WigConfig.patch_dict_config(old.copy(), patch)
 	WigConfig.save_dict_config(P.wigwamfile, end)
+
+	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
+	requested = WigConfig(end)
+	dependencies = requested.find_dependencies(wig_names, dependencies = True) + (requested.find_dependencies(wig_names, dependent = True) if recursive else [])
+	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed)) + (wig_names if force else []))
 
 	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
