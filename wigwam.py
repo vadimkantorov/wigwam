@@ -17,7 +17,6 @@ class P:
 	wigwamdirname = '.wigwam'
 	wigwamfilename = 'Wigwamfile'
 	userwigdir = 'wigs'
-	python_prefix_scheme = ('lib/python{0}.{1}/site-packages'.format(*sys.version_info), 'bin', 'include/python{0}.{1}'.format(*sys.version_info))
 	
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
@@ -36,7 +35,8 @@ class P:
 				
 		P.prefix_deb = os.path.join(P.prefix, 'deb')
 		P.prefix_python = os.path.join(P.prefix, 'python')
-		python_module_path,  python_bin_path, python_include_path = [os.path.join(P.prefix_python, path_component) for path_component in P.python_prefix_scheme]
+		python_prefix_scheme = ('lib/python{0}.{1}/site-packages'.format(*sys.version_info), 'bin', 'include/python{0}.{1}'.format(*sys.version_info))
+		python_module_path,  python_bin_path, python_include_path = [os.path.join(P.prefix_python, path_component) for path_component in python_prefix_scheme]
 		P.prefix_bin_dirs = [os.path.join(P.prefix, 'bin'), os.path.join(P.prefix_deb, 'usr/bin'), python_bin_path]
 		P.prefix_lib_dirs = [os.path.join(P.prefix, 'lib64'), os.path.join(P.prefix, 'lib'), os.path.join(P.prefix_deb, 'usr/lib'), os.path.join(P.prefix_deb, 'usr/lib/x86_64-linux-gnu')]
 		P.prefix_include_dirs = [os.path.join(P.prefix, 'include'), os.path.join(P.prefix_deb, 'usr/include'), python_include_path]
