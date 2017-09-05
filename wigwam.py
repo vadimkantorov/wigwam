@@ -331,7 +331,7 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested = WigConfig(end)
-	dependencies = requested.find_dependencies(wig_names, dependencies = True)
+	dependencies = requested.find_dependencies(wig_names or (set(requested) - set(installed)), dependencies = True)
 	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed)) + (wig_names if force else []))
 
 	build(to_build, verbose = verbose, dry = dry)
@@ -341,7 +341,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
 	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
-	print('Going to upgrade packages:' if len(patch) > 0 else '')
+	print('Going to upgrade packages:' if len(patch) > 0 else 'No packages will be upgraded.')
 	for wig_name in patch:
 		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params'])))
 	end = WigConfig.patch_dict_config(old.copy(), patch)
