@@ -106,32 +106,24 @@ class Wig(object):
 	tar_uri = None
 	tar_strip_components = None
 	working_directory = '.'
-
-	all_installation_stages = ['fetch', 'configure', 'build', 'install']
-	
 	dependencies = []
-
 	before_fetch, after_fetch = [], []
 	before_configure, after_configure = [], []
 	before_build, after_build = [], []
 	before_install, after_install = [], []
-	
 	configure_flags = []
 	make_flags = []
 	make_install_flags = []
 	
 	def __init__(self, name):
 		self.name = name
-
 		self.bin_dirs = []
 		self.lib_dirs = []
 		self.include_dirs = []
 		self.python_dirs = []
-
 		self.env = {}
 		self.enabled_features = []
 		self.disabled_features = []
-		self.dependencies = set()
 		self.fetch_method = self.fetch_method or ('uri' if hasattr(self, 'uri') else 'tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
 		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 
@@ -572,7 +564,8 @@ def init(wigwamfile = None):
 				json.dump(json.loads(filler), f)
 
 def log(wig_name, fetch, configure, build, install):
-	stages = filter(locals().get, Wig.all_installation_stages) or Wig.all_installation_stages
+	stages = ['fetch', 'configure', 'build', 'install']
+	stages = filter(locals().get, stages) or stages
 	subprocess.call('cat "{}" | less'.format('" "'.join([os.path.join(P.log_base(wig_name), stage + '.txt') for stage in stages])), shell = True)
 
 def search(wig_name):
