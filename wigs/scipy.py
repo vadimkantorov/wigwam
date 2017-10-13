@@ -1,27 +1,15 @@
 class scipy(PythonWig):
-	tar_uri = 'https://github.com/scipy/scipy/releases/download/v{RELEASE_VERSION}/scipy-{RELEASE_VERSION}.tar.gz'
-	last_release_version = '0.18.1'
+	tar_uri = 'https://github.com/scipy/scipy/releases/download/v{version}/scipy-{version}.tar.gz'
 	git_uri = 'https://github.com/scipy/scipy'
+	version = '0.18.1'
 	dependencies = ['numpy']
 
-	optional_dependencies = ['openblas']
-	supported_features = ['openblas']
-	default_features = ['+openblas']
-
-	def setup(self):
-		self.site_cfg = []
-
 	def switch_openblas_on(self):
+		#default_features = ['+openblas']
 		self.require('openblas')
-		include_dirs = map(os.path.abspath, P.prefix_include_dirs)
-		lib_dirs = map(os.path.abspath, P.prefix_lib_dirs)
-		self.site_cfg += [
-			'[openblas]',
-			'libraries = openblas',
-			'include_dirs = %s' % os.path.pathsep.join(include_dirs),
-			'library_dirs = %s' % os.path.pathsep.join(lib_dirs),
-			'runtime_library_dirs = %s' % os.path.pathsep.join(lib_dirs)
-		]
+		include_dirs = os.path.pathsep.join(map(os.path.abspath, P.prefix_include_dirs))
+		lib_dirs = os.path.pathsep.join(map(os.path.abspath, P.prefix_lib_dirs))
+		self.configure_flags += ['[openblas]', 'libraries = openblas', 'include_dirs = {}'.format(include_dirs), 'library_dirs = {}'.format(lib_dirs), 'runtime_library_dirs = {}'.format(lib_dirs)]
 
 	def configure(self):
-		return ['cat <<- EOF > site.cfg'] + self.site_cfg + ['EOF']
+		return ['cat <<- EOF > site.cfg'] + self.configure_flags + ['EOF']
