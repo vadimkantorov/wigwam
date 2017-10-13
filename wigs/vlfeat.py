@@ -11,7 +11,5 @@ class vlfeat(Wig):
 	def configure(self):
 		return ''
 
-	def instal(self):
+	def install(self):
 		return ''
-		
-
