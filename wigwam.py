@@ -73,7 +73,7 @@ class S:
 	FPIC_FLAG = '-fPIC'
 	CMAKE_INSTALL_PREFIX_FLAG = '-DCMAKE_INSTALL_PREFIX="$PREFIX"'
 	CMAKE_PREFIX_PATH_FLAG = '-DCMAKE_PREFIX_PATH="$PREFIX"'
-	MKDIR_CD_BUILD = 'mkdir -p build && cd build'
+	MKDIR_BUILD = 'mkdir -p build'
 	CD_BUILD = 'cd build'
 	CD_PARENT = 'cd ..'
 	MAKEFLAGS = 'MAKEFLAGS'
@@ -208,6 +208,25 @@ class PythonWig(Wig):
 
 	def install(self):
 		return S.python_setup_install
+
+def CmakeWig(Wig):
+	cmake_flags = []
+
+	def __init__(self, **args, **kwargs):
+		super(CmakeWig, self).__init__(*args, **kwargs)
+		self.require('cmake')
+
+	def configure(self):
+		return [S.MKDIR_BUILD, S.CD_BUILD, 'cmake {} ..'.format(' '.join([S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG] + self.cmake_flags))]
+
+	def build(self):
+		return [S.CD_BUILD] + Wig.build(self)
+
+	def install(self):
+		return [S.CD_BUILD] + Wig.install(self)
+
+	#def switch_debug(self, on):
+	#	self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
 class WigConfig(object):
 	def __init__(self, dict_config):
