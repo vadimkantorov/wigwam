@@ -3,6 +3,4 @@ class bzip2(Wig):
 	version = '1.0.6'
 	make_flags = [S.CFLAGS + '=' + S.FPIC_FLAG]
 	make_install_flags = [S.PREFIX_MAKE_INSTALL_FLAG]
-	
-	def configure(self):
-		return ''
+	configure = None

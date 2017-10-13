@@ -2,10 +2,7 @@ class leveldb(Wig):
 	tar_uri = 'https://github.com/google/leveldb/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/google/leveldb'
 	version = '1.18'
-
-	def configure(self):
-		return ''
+	configure = None
 
 	def install(self):
-		return ['cp --preserve=links libleveldb.* "$PREFIX/lib"',
-				'cp -r include/leveldb "$PREFIX/include"']
+		return ['cp --preserve=links libleveldb.* "$PREFIX/lib"', 'cp -r include/leveldb "$PREFIX/include"']
