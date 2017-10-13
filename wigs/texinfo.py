@@ -1,3 +1,3 @@
 class texinfo(Wig):
-	tar_uri = 'http://ftp.gnu.org/gnu/texinfo/texinfo-{RELEASE_VERSION}.tar.gz'
-	last_release_version = '6.0'
+	tar_uri = 'http://ftp.gnu.org/gnu/texinfo/texinfo-{VERSION}.tar.gz'
+	version = '6.0'
