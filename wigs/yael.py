@@ -1,14 +1,12 @@
 class yael(Wig):
-	tar_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '438'
-	supported_features = ['python', 'atlas']
+	tar_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v{VERSION}.tar.gz'
+	version = '438'
 	optional_dependencies = ['atlas', 'swig']
+	install = None
 
-	def setup(self):
-		self.skip('install', 'prefix')
-
+	#drop prefix
 	def configure(self):
-		return 'bash configure.sh %s' % ' '.join(self.configure_flags)
+		return 'bash configure.sh {}'.format(' '.join(self.configure_flags))
 
 	def switch_python_on(self):
 		self.require('swig')
