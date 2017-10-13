@@ -1,4 +1,4 @@
 class cython(PythonWig):
-	tar_uri = 'https://github.com/cython/cython/archive/{RELEASE_VERSION}.tar.gz'
-	last_release_version = '0.25b0'
+	tar_uri = 'https://github.com/cython/cython/archive/{VERSION}.tar.gz'
 	git_uri = 'https://github.com/cython/cython'
+	version = '0.25b0'
