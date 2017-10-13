@@ -1,6 +1,5 @@
 class skimage(PythonWig):
-	tar_uri = 'https://github.com/scikit-image/scikit-image/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '0.12.3'
+	tar_uri = 'https://github.com/scikit-image/scikit-image/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/scikit-image/scikit-image'
-
+	version = '0.12.3'
 	dependencies = ['numpy', 'cython', 'pillow', 'matplotlib']
