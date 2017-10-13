@@ -1,13 +1,10 @@
 class pytorch(PythonWig):
 	git_uri = 'https://github.com/pytorch/pytorch'
-	dependencies = ['numpy', 'cmake', 'pip-pyyaml', 'pip-cffi'] #, 'pip']
-	optional_dependencies = ['magma']
-	supported_features = ['cuda']
-	default_features = ['+cuda']
+	dependencies = ['numpy', 'cmake', PipWig('pyyaml'), PipWig('cffi')]
 	
-	# TODO: set env CUDA_HOME for custom CUDA path
-
 	def switch_cuda(self, on):
+		# TODO: set env CUDA_HOME for custom CUDA path
+		#default_features = ['+cuda']
 		if on:
 			self.require('magma')
 		else:

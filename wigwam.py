@@ -109,7 +109,6 @@ class Wig(object):
 
 	all_installation_stages = ['fetch', 'configure', 'build', 'install']
 	
-	config_access = []
 	dependencies = []
 
 	before_fetch, after_fetch = [], []
@@ -226,9 +225,12 @@ def CmakeWig(Wig):
 		return [S.CD_BUILD] + super(CmakeWig, self).install()
 
 	#def switch_debug(self, on):
-	#	self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
+	#	self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
 class AptWig(Wig):
+	pass
+
+class PipWig(Wig):
 	pass
 
 class WigConfig(object):
@@ -575,7 +577,7 @@ def log(wig_name, fetch, configure, build, install):
 
 def search(wig_name):
 	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
-	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies, 'optional_dependencies' : wig.optional_dependencies, 'config_access' : wig.config_access}
+	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies}
 
 	def all_wig_names():
 		for repo in P.repos:

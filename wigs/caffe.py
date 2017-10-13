@@ -1,22 +1,18 @@
 class caffe(Wig):
 	git_uri = 'https://github.com/BVLC/caffe'
-	config_access = ['PATH_TO_NVCC', 'PATH_TO_CUDNN_SO', 'PATH_TO_MATLAB']
 	dependencies = ['boost', 'protobuf', 'glog', 'gflags', 'hdf5', 'snappy']
-	optional_dependencies = ['openblas', 'leveldb', 'lmdb', 'opencv', 'skimage']
-	supported_features = ['openblas', 'python', 'cuda', 'cudnn', 'lmdb', 'leveldb', 'opencv', 'matlab']
-	default_features = ['+openblas', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
+	#default_features = ['+openblas', '-leveldb', '-lmdb', '+opencv', '+cuda', '+cudnn']
+	install = None
 	
 	def setup(self):
-		self.skip('make parallel', 'install')
 		self.lib_dirs += [os.path.join(self.paths.src_dir, 'build', 'lib')]
 		self.bin_dirs += [os.path.join(self.paths.src_dir, 'build', 'tools')]
-		self.makefile_config_fixes = ''
 		
 	def set_makefile_config_var_commented(self, var_name, var_value):
-		self.makefile_config_fixes += '''| sed 's$# %s :=$%s := %s# %s :=$' ''' % (var_name, var_name, var_value, var_name)
+		self.configure_flags += '''| sed 's$# %s :=$%s := %s# %s :=$' ''' % (var_name, var_name, var_value, var_name)
 
 	def set_makefile_config_var_uncommented(self, var_name, var_prepend, comment_rest = False):
-		self.makefile_config_fixes += '''| sed 's$%s :=$%s := %s%s$' ''' % (var_name, var_name, var_prepend, '#' if comment_rest else '')
+		self.configure_flags += '''| sed 's$%s :=$%s := %s%s$' ''' % (var_name, var_name, var_prepend, '#' if comment_rest else '')
 
 	def switch_openblas_on(self):
 		self.require('openblas')
@@ -61,4 +57,7 @@ class caffe(Wig):
 		self.set_makefile_config_var_commented('WITH_PYTHON_LAYER', 1)
 
 	def configure(self):
-		return ['cat Makefile.config.example %s > Makefile.config' % self.makefile_config_fixes]
+		return ['cat Makefile.config.example %s > Makefile.config' % self.configure_flags]
+
+	def build(self):
+		return S.make(self.make_flags)

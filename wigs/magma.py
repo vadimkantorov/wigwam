@@ -2,7 +2,6 @@ class magma(Wig):
 	tar_uri = 'http://icl.cs.utk.edu/projectsfiles/magma/downloads/magma-{version}.tar.gz'
 	release_version = '1.6.2'
 	dependencies = ['openblas']
-	config_access = ['PATH_TO_NVCC']
 	make_install_flags = [S.prefix_MAKE_INSTALL_FLAG]
 	
 	def configure(self):
