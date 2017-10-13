@@ -1,6 +1,5 @@
 class python(Wig):
+	tar_uri = 'https://github.com/python/cpython/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/python/cpython'
-	tar_uri = 'https://github.com/python/cpython/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '2.7.13'
-	
+	version = '2.7.13'
 	dependencies = ['openssl', 'ncurses', 'readline', 'zlib', 'bzip2']
