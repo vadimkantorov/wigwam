@@ -138,7 +138,7 @@ class Wig(object):
 		self.enabled_features = []
 		self.disabled_features = []
 		self.dependencies_ = set()
-		self.fetch_method = self.fetch_method or ('tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
+		self.fetch_method = self.fetch_method or ('uri' if hasattr(self, 'uri') else 'tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
 		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 
 	def dict_config(self):
