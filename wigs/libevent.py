@@ -1,4 +1,4 @@
 class libevent(Wig):
+	tar_uri = 'https://github.com/libevent/libevent/releases/download/release-{VERSION}/libevent-{VERSION}.tar.gz'
 	git_uri = 'https://github.com/libevent/libevent'
-	tar_uri = 'https://github.com/libevent/libevent/releases/download/release-{RELEASE_VERSION}/libevent-{RELEASE_VERSION}.tar.gz'
-	last_release_version = '2.0.22-stable'
+	version = '2.0.22-stable'
