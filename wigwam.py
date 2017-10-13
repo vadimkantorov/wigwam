@@ -177,7 +177,7 @@ class Wig(object):
 		return [S.make([S.make_jobs()] + self.make_flags)]
 
 	def install(self):
-		return [S.make_install([S.make_jobs()] + self.make_install_flags)] if 'install' not in self.skip_stages else []
+		return [S.make_install([S.make_jobs()] + self.make_install_flags)]
 
 	def setup(self):
 		pass
@@ -453,7 +453,7 @@ def build(wig_names, verbose = False, dry = False):
 				S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 			]
 			for stage, skip_stages in stage_skip_stages[1:]:
-				if all([stage not in wig.skip_stages for stage in skip_stages]):
+				if all([getattr(wig, stage) is not None for stage in skip_stages]):
 					debug_script += ['(']
 					debug_script += getattr(wig, 'before_' + stage)
 					debug_script += coalesce_list(getattr(wig, stage)())
@@ -468,8 +468,8 @@ def build(wig_names, verbose = False, dry = False):
 				S.mkdir_p('$LOGBASE'),
 				'cd "{}"'.format(P.root)
 			]
-			for stage, skip_stages in stage_skip_stages:
-				if all([stage not in wig.skip_stages for stage in skip_stages]):
+			for stage, skip_stages in stage_ is not None skip_stages:
+				if all([getattr(wig, stage) is not None for stage in skip_stages]):
 					build_script += [
 						'printf "%14s...  " {}'.format(stage.capitalize()),
 						'LOG="$LOGBASE/{}.txt"'.format(stage),
