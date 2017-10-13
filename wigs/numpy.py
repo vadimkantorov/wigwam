@@ -3,7 +3,6 @@ class numpy(PythonWig):
 	last_release_version = '1.11.2'
 	git_uri = 'https://github.com/numpy/numpy'
 	dependencies = ['cython'] # 'setuptools'
-	optional_dependencies = ['openblas']
 
 	def switch_openblas_on(self):
 		#default_features = ['+openblas']
