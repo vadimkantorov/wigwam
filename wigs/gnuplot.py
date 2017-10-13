@@ -1,3 +1,3 @@
 class gnuplot(Wig):
-	tar_uri = 'http://downloads.sourceforge.net/project/gnuplot/gnuplot/{RELEASE_VERSION}/gnuplot-{RELEASE_VERSION}.tar.gz'
-	last_release_version = '5.0.0'
+	tar_uri = 'http://downloads.sourceforge.net/project/gnuplot/gnuplot/{VERSION}/gnuplot-{VERSION}.tar.gz'
+	version = '5.0.0'
