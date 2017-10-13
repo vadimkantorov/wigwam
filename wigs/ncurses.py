@@ -1,8 +1,6 @@
 class ncurses(Wig):
-	tar_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{RELEASE_VERSION}.tar.gz'
-	last_release_version = '6.0'
-
-	def setup(self):
-		self.configure_flags += ['--enable-overwrite']
-		self.before_configure += [S.export(S.CFLAGS, '-fPIC'), S.export(S.CPPFLAGS, '-P')]
-		self.before_make += [S.export(S.CFLAGS, '-fPIC')]
+	tar_uri = 'http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{VERSION}.tar.gz'
+	version = '6.0'
+	configure_flags = ['--enable-overwrite']
+	before_configure = [S.export(S.CFLAGS, '-fPIC'), S.export(S.CPPFLAGS, '-P')]
+	before_make = [S.export(S.CFLAGS, '-fPIC')]
