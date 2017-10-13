@@ -1,8 +1,8 @@
 class lz4(Wig):
-	tar_uri = 'https://github.com/Cyan4973/lz4/archive/r{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/Cyan4973/lz4/archive/r{VERSION}.tar.gz'
 	git_uri = 'https://github.com/Cyan4973/lz4'
-	last_release_version = '130'
+	version = '130'
+	make_install_flags += [S.PREFIX_MAKE_INSTALL_FLAG]
 
-	def setup(self):
-		self.skip('configure')
-		self.make_install_flags += [S.PREFIX_MAKE_INSTALL_FLAG]
+	def configure(self):
+		return ''

@@ -10,7 +10,6 @@ import argparse
 import itertools
 import traceback
 import subprocess
-import multiprocessing
 
 class P:
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
@@ -91,7 +90,7 @@ class S:
 	export_prepend_paths = staticmethod(lambda var_name, paths: S.export(var_name, os.path.pathsep.join(paths + ['$' + var_name])))
 	configure = staticmethod(lambda flags: './configure {}'.format(' '.join(flags)))
 	make = staticmethod(lambda flags: 'make {}'.format(' '.join(flags)))
-	make_jobs = staticmethod('-j{}'.format)
+	make_jobs = staticmethod(lambda njobs = '$(nproc)': '-j{}'.format(njobs))
 	makeflags = staticmethod(lambda flags: '{}="{} {}"'.format(S.MAKEFLAGS, ' '.join(flags), os.getenv(S.MAKEFLAGS, '')) if flags else '')
 	make_install = staticmethod(lambda flags: 'make install {}'.format(' '.join(flags)))
 	python_setup_install = 'python setup.py install --prefix="{}"'.format(PREFIX_PYTHON)
@@ -106,12 +105,21 @@ class Wig(object):
 	tar_strip_components = None
 	working_directory = '.'
 
+	all_installation_stages = ['fetch', 'configure', 'build', 'install']
+	
 	config_access = []
 	dependencies = []
 	optional_dependencies = []
 	skip_stages = []
 
-	all_installation_stages = ['fetch', 'configure', 'build', 'install']
+	before_fetch, after_fetch = [], []
+	before_configure, after_configure = [], []
+	before_build, after_build = [], []
+	before_install, after_install = [], []
+	
+	configure_flags = []
+	make_flags = []
+	make_install_flags = []
 	
 	def __init__(self, name):
 		self.name = name
@@ -120,19 +128,6 @@ class Wig(object):
 		self.lib_dirs = []
 		self.include_dirs = []
 		self.python_dirs = []
-
-		self.configure_flags = [S.PREFIX_CONFIGURE_FLAG]
-		self.make_flags = [S.make_jobs(multiprocessing.cpu_count())]
-		self.make_install_flags = self.make_flags[:]
-
-		self.before_fetch = []
-		self.after_fetch = []
-		self.before_configure = []
-		self.after_configure = []
-		self.before_build = []
-		self.after_build = []
-		self.before_install = []
-		self.after_install = []
 
 		self.env = {}
 		self.enabled_features = []
@@ -175,13 +170,13 @@ class Wig(object):
 		return locals()[self.fetch_params['fetch_method']](self.paths.src_dir, **self.fetch_params)
 	
 	def configure(self):
-		return S.configure(self.configure_flags)
+		return S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)
 
 	def build(self):
-		return S.make(self.make_flags)
+		return S.make([S.make_jobs()] + self.make_flags)
 
 	def install(self):
-		return S.make_install(self.make_install_flags) if 'install' not in self.skip_stages else []
+		return S.make_install([S.make_jobs()] + self.make_install_flags) if 'install' not in self.skip_stages else ''
 
 	def setup(self):
 		pass
@@ -202,7 +197,7 @@ class Wig(object):
 
 class AutogenWig(Wig):
 	def configure(self):
-		return ['bash autogen.sh', S.configure(self.configure_flags)]
+		return ['bash autogen.sh', S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
 
 class PythonWig(Wig):
 	def configure(self):
