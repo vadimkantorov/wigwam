@@ -1,4 +1,4 @@
 class nodejs(Wig):
+	tar_uri = 'https://github.com/nodejs/node/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/nodejs/node'
-	tar_uri = 'https://github.com/nodejs/node/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '4.7.2'
+	version = '4.7.2'
