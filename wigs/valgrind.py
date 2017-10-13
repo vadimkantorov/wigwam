@@ -1,3 +1,3 @@
 class valgrind(AutogenWig):
-	tar_uri = 'http://valgrind.org/downloads/valgrind-{RELEASE_VERSION}.tar.bz2'
-	last_release_version = '3.10.1'
+	tar_uri = 'http://valgrind.org/downloads/valgrind-{VERSION}.tar.bz2'
+	version = '3.10.1'
