@@ -1,5 +1,5 @@
 class vlfeat(Wig):
-	tar_uri = 'https://github.com/vlfeat/vlfeat/archive/v{VERSION}.tar.gz'
+	tar_uri = 'https://github.com/vlfeat/vlfeat/archive/v{version}.tar.gz'
 	git_uri = 'https://github.com/vlfeat/vlfeat'
 	version = '0.9.20'
 	config_access = ['PATH_TO_MATLAB']

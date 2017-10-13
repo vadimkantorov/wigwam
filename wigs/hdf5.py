@@ -1,3 +1,3 @@
 class hdf5(Wig):
-	tar_uri = 'http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-{VERSION}/src/hdf5-{VERSION}.tar.gz'
+	tar_uri = 'http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-{version}/src/hdf5-{version}.tar.gz'
 	version = '1.8.17'

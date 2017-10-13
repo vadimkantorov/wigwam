@@ -1,5 +1,5 @@
 class magma(Wig):
-	tar_uri = 'http://icl.cs.utk.edu/projectsfiles/magma/downloads/magma-{VERSION}.tar.gz'
+	tar_uri = 'http://icl.cs.utk.edu/projectsfiles/magma/downloads/magma-{version}.tar.gz'
 	release_version = '1.6.2'
 	dependencies = ['openblas']
 	config_access = ['PATH_TO_NVCC']

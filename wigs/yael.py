@@ -1,5 +1,5 @@
 class yael(Wig):
-	tar_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v{VERSION}.tar.gz'
+	tar_uri = 'https://gforge.inria.fr/frs/download.php/file/33810/yael_v{version}.tar.gz'
 	version = '438'
 	optional_dependencies = ['atlas', 'swig']
 	install = None

@@ -1,5 +1,5 @@
 class boost(Wig):
-	tar_uri = 'https://github.com/boostorg/boost/archive/boost-{VERSION}.tar.gz'
+	tar_uri = 'https://github.com/boostorg/boost/archive/boost-{version}.tar.gz'
 	git_uri = 'https://github.com/boostorg/boost'
 	version = '1.65.1'
 	build = None

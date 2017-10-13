@@ -1,5 +1,5 @@
 class lmdb(Wig):
-	tar_uri = 'https://github.com/LMDB/lmdb/archive/LMDB_{VERSION}.tar.gz'
+	tar_uri = 'https://github.com/LMDB/lmdb/archive/LMDB_{version}.tar.gz'
 	git_uri = 'https://github.com/LMDB/lmdb'
 	version = '0.9.15'
 	working_directory = 'libraries/liblmdb'

@@ -1,5 +1,5 @@
 class leveldb(Wig):
-	tar_uri = 'https://github.com/google/leveldb/archive/v{VERSION}.tar.gz'
+	tar_uri = 'https://github.com/google/leveldb/archive/v{version}.tar.gz'
 	git_uri = 'https://github.com/google/leveldb'
 	version = '1.18'
 	configure = None

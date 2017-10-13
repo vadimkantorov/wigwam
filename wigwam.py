@@ -162,7 +162,7 @@ class Wig(object):
 
 		def tar(target_dir, tar_uri, version, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if tar_uri.endswith(e)][0])
-			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(tar_uri.format(VERSION = version), downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, 1 if tar_strip_components is None else tar_strip_components)]
+			return [S.rm_rf(target_dir), S.mkdir_p(target_dir), S.download(tar_uri.format(version = version), downloaded_file_path), 'tar -xf "{}" -C "{}" --strip-components={}'.format(downloaded_file_path, target_dir, 1 if tar_strip_components is None else tar_strip_components)]
 
 		def uri(target_dir, uri, **ignored):
 			downloaded_file_path = os.path.join(target_dir, os.path.basename(uri))
