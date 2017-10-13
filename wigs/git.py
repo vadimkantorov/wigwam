@@ -1,8 +1,6 @@
 class git(Wig):
-	tar_uri = 'https://github.com/git/git/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '2.10.1'
+	tar_uri = 'https://github.com/git/git/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/git/git'
-
-	def setup(self):
-		self.before_configure += [S.make(['configure'])]
-		self.configure_flags += ['--without-tcltk']
+	version = '2.10.1'
+	before_configure = [S.make(['configure'])]
+	configure_flags = ['--without-tcltk']
