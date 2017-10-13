@@ -3,4 +3,4 @@ class ncurses(Wig):
 	version = '6.0'
 	configure_flags = ['--enable-overwrite']
 	before_configure = [S.export(S.CFLAGS, '-fPIC'), S.export(S.CPPFLAGS, '-P')]
-	before_make = [S.export(S.CFLAGS, '-fPIC')]
+	before_build = [S.export(S.CFLAGS, S.FPIC_FLAG)]

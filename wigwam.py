@@ -20,7 +20,6 @@ class P(object):
 	@staticmethod
 	def init(root, wigwamfile, extra_repos):
 		P.root = root
-
 		P.wigwamfile = wigwamfile
 		P.src_tree = os.path.join(P.root, 'src')
 		P.prefix = os.path.join(P.root, 'prefix')
@@ -71,6 +70,7 @@ class S(object):
 	DESTDIR_MAKE_INSTALL_FLAG = 'DESTDIR="$PREFIX"'
 	WIGWAM_PREFIX = 'WIGWAM_PREFIX'
 	FPIC_FLAG = '-fPIC'
+	SHARED_FLAG = '-shared'
 	CMAKE_INSTALL_PREFIX_FLAG = '-DCMAKE_INSTALL_PREFIX="$PREFIX"'
 	CMAKE_PREFIX_PATH_FLAG = '-DCMAKE_PREFIX_PATH="$PREFIX"'
 	MKDIR_BUILD = 'mkdir -p build'

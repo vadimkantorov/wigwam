@@ -3,4 +3,4 @@ class readline(Wig):
 	version = '6.3'
 	configure_flags = ['--disable-shared']
 	before_configure = [S.export(S.CFLAGS, '-fPIC')]
-	before_make = [S.export(S.CFLAGS, '-fPIC')]
+	before_build = [S.export(S.CFLAGS, S.FPIC_FLAG)]
