@@ -1,7 +1,5 @@
 class double_conversion(CmakeWig):
+	tar_uri = 'https://github.com/google/double-conversion/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/google/double-conversion'
-	tar_uri = 'https://github.com/google/double-conversion/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '1.1.5'
-
-	def setup(self):
-		self.cmake_flags += ['-DBUILD_SHARED_LIBS=ON']
+	version = '1.1.5'
+	cmake_flags = ['-DBUILD_SHARED_LIBS=ON']
