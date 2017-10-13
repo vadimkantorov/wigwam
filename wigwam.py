@@ -11,7 +11,7 @@ import itertools
 import traceback
 import subprocess
 
-class P:
+class P(object):
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
 	wigwamdirname = '.wigwam'
 	wigwamfilename = 'Wigwamfile'
@@ -49,7 +49,7 @@ class P:
 		P.log_base = staticmethod(lambda wig_name: os.path.join(P.log_root, wig_name))
 		P.debug_script = staticmethod(lambda wig_name: os.path.join(P.debug_root, wig_name + '.sh'))
 		
-class S:
+class S(object):
 	LDFLAGS = 'LDFLAGS'
 	CFLAGS = 'CFLAGS'
 	CXXFLAGS = 'CXXFLAGS'
@@ -94,6 +94,8 @@ class S:
 	makeflags = staticmethod(lambda flags: '{}="{} {}"'.format(S.MAKEFLAGS, ' '.join(flags), os.getenv(S.MAKEFLAGS, '')) if flags else '')
 	make_install = staticmethod(lambda flags: 'make install {}'.format(' '.join(flags)))
 	python_setup_install = 'python setup.py install --prefix="{}"'.format(PREFIX_PYTHON)
+	git_clone_recursvive = staticmethod('git clone --recursive "{}" "{}"'.format)
+	git_checkout = staticmethod('git checkout "{}"'.format)
 
 class Wig(object):
 	fetch_method = None
@@ -157,7 +159,7 @@ class Wig(object):
 	def fetch(self):
 		def git(target_dir, git_uri, git_commit = None, git_branch = None, git_tag = None, **ignored):
 			git_tag = git_tag or git_commit or git_branch
-			return [S.rm_rf(target_dir), 'git clone --recursive "{}" "{}"'.format(git_uri, target_dir)] + (['cd "{}"'.format(target_dir), 'git checkout "{}"'.format(tag)] if git_tag is not None else [])
+			return [S.rm_rf(target_dir), S.git_clone_recursive(git_uri, target_dir)] + (['cd "{}"'.format(target_dir), S.git_checkout(tag)] if git_tag is not None else [])
 
 		def tar(target_dir, tar_uri, version, tar_strip_components = 1, **ignored):
 			downloaded_file_path = os.path.join(P.tar_root, os.path.basename(target_dir) + [e for e in ['.tar', '.tar.gz', '.tar.bz2', '.tgz'] if tar_uri.endswith(e)][0])
@@ -170,13 +172,13 @@ class Wig(object):
 		return locals()[self.fetch_params['fetch_method']](self.paths.src_dir, **self.fetch_params)
 	
 	def configure(self):
-		return S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)
+		return [S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
 
 	def build(self):
-		return S.make([S.make_jobs()] + self.make_flags)
+		return [S.make([S.make_jobs()] + self.make_flags)]
 
 	def install(self):
-		return S.make_install([S.make_jobs()] + self.make_install_flags) if 'install' not in self.skip_stages else ''
+		return [S.make_install([S.make_jobs()] + self.make_install_flags)] if 'install' not in self.skip_stages else []
 
 	def setup(self):
 		pass
@@ -201,10 +203,10 @@ class AutogenWig(Wig):
 
 class PythonWig(Wig):
 	def configure(self):
-		return ''
+		return []
 
 	def build(self):
-		return ''
+		return []
 
 	def install(self):
 		return S.python_setup_install
@@ -220,13 +222,16 @@ def CmakeWig(Wig):
 		return [S.MKDIR_BUILD, S.CD_BUILD, 'cmake {} ..'.format(' '.join([S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG] + self.cmake_flags))]
 
 	def build(self):
-		return [S.CD_BUILD] + Wig.build(self)
+		return [S.CD_BUILD] + super(CmakeWig, self).build()
 
 	def install(self):
-		return [S.CD_BUILD] + Wig.install(self)
+		return [S.CD_BUILD] + super(CmakeWig, self).install()
 
 	#def switch_debug(self, on):
 	#	self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
+
+class DebWig(Wig):
+	pass
 
 class WigConfig(object):
 	def __init__(self, dict_config):
