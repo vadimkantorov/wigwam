@@ -1,11 +1,17 @@
 class vlfeat(Wig):
-	tar_uri = 'https://github.com/vlfeat/vlfeat/archive/v{RELEASE_VERSION}.tar.gz'
+	tar_uri = 'https://github.com/vlfeat/vlfeat/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/vlfeat/vlfeat'
-	last_release_version = '0.9.20'
+	version = '0.9.20'
 	config_access = ['PATH_TO_MATLAB']
 
+	#self.matlab('.')
 	def setup(self):
-		self.skip('configure', 'install')
-		PATH_TO_MEX = os.path.join(os.path.dirname(self.cfg('PATH_TO_MATLAB')), 'mex')
-		self.after_make += ['make MEX="%s"' % PATH_TO_MEX]
-		self.matlab('.')
+		self.after_make = ['make MEX="{}"'.format(os.path.join(os.path.dirname(self.getenv('PATH_TO_MATLAB')), 'mex'))]
+
+	def configure(self):
+		return ''
+
+	def instal(self):
+		return ''
+		
+
