@@ -200,6 +200,10 @@ class Wig(object):
 	def require(self, wig_name):
 		self.dependencies_.append(wig_name)
 
+class AutogenWig(Wig):
+	def configure(self):
+		return ['bash autogen.sh', S.configure(self.configure_flags)]
+
 class WigConfig(object):
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
