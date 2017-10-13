@@ -1,4 +1,4 @@
 class glog(Wig):
+	tar_uri = 'https://github.com/google/glog/archive/v{VERSION}.tar.gz'
 	git_uri = 'https://github.com/google/glog'
-	tar_uri = 'https://github.com/google/glog/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '0.3.4'
+	version = '0.3.4'
