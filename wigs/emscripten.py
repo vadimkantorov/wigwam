@@ -1,6 +1,6 @@
 class emscripten(CmakeWig):
 	git_uri = 'https://github.com/kripken/emscripten'
-	dependencies = ['nodejs', DebWig('default-jre')]
+	dependencies = ['nodejs', AptWig('default-jre')]
 	working_directory = 'emscripten-fastcomp'
 	cmake_flags = ['-DCMAKE_BUILD_TYPE=Release', '-DLLVM_TARGETS_TO_BUILD="X86;JSBackend"', '-DLLVM_INCLUDE_EXAMPLES=OFF', '-DLLVM_INCLUDE_TESTS=OFF', '-DCLANG_INCLUDE_EXAMPLES=OFF', '-DCLANG_INCLUDE_TESTS=OFF']
 

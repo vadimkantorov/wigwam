@@ -229,7 +229,7 @@ def CmakeWig(Wig):
 	#def switch_debug(self, on):
 	#	self.cmake_flags += ['-D CMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
-class DebWig(Wig):
+class AptWig(Wig):
 	pass
 
 class WigConfig(object):
@@ -342,7 +342,7 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry):
+def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry, pip, luarocks, apt):
 	init()
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
@@ -626,6 +626,10 @@ if __name__ == '__main__':
 	cmd.add_argument('--force', action = 'store_true')
 	cmd.add_argument('--dry', action = 'store_true')
 	cmd.add_argument('--verbose', action = 'store_true')
+	group = cmd.add_mutually_exclusive_group()
+	group.add_argument('--pip', action = 'store_true')
+	group.add_argument('--luarocks', action = 'store_true')
+	group.add_argument('--apt', action = 'store_true')
 	
 	cmd = subparsers.add_parser('upgrade')
 	cmd.set_defaults(func = upgrade)
