@@ -133,7 +133,7 @@ class Wig(object):
 		self.env = {}
 		self.enabled_features = []
 		self.disabled_features = []
-		self.dependencies_ = set()
+		self.dependencies = set()
 		self.fetch_method = self.fetch_method or ('uri' if hasattr(self, 'uri') else 'tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
 		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 
@@ -194,7 +194,7 @@ class Wig(object):
 		return self.env.get(name)
 
 	def require(self, wig_name):
-		self.dependencies_.append(wig_name)
+		self.dependencies.append(wig_name)
 
 class AutogenWig(Wig):
 	def configure(self):
@@ -242,8 +242,6 @@ class WigConfig(object):
 		for wig_name, wig_dict_config in self.dict_config().items():
 			wig = WigConfig.find_and_construct_wig(wig_name)
 			wig.load_dict_config(wig_dict_config, self.env)
-			for dep_wig_name in wig.dependencies:
-				wig.require(dep_wig_name)
 			wig.setup()
 			wig.enabled_features += wig_dict_config.get('enabled_features', [])
 			wig.disabled_features += wig_dict_config.get('disabled_features', [])
@@ -304,7 +302,7 @@ class WigConfig(object):
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
 	def find_dependencies(self, wig_names, dependencies = True, dependent = False):
-		graph = {wig_name : self.wigs[wig_name].dependencies_ for wig_name in self.wigs} if dependencies else {wig_name : filter(lambda w: wig_name in self.wigs[w].dependencies_, self.wigs) for wig_name in self.wigs}
+		graph = {wig_name : self.wigs[wig_name].dependencies for wig_name in self.wigs} if dependencies else {wig_name : filter(lambda w: wig_name in self.wigs[w].dependencies, self.wigs) for wig_name in self.wigs}
 		visited = set()
 		def dfs(v):
 			visited.add(v)
@@ -317,7 +315,7 @@ class WigConfig(object):
 		return visited
 
 	def find_unsatisfied_dependencies(self):
-		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies_ if dep_wig_name not in wig_config.wigs))}
+		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies if dep_wig_name not in wig_config.wigs))}
 		end = self.dict_config().copy()
 		while True:
 			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
@@ -396,7 +394,7 @@ def build(wig_names, verbose = False, dry = False):
 
 		print('{} packages to be installed in the order below:'.format(len(installation_order)))
 		for wig_name in installation_order:
-			print('{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies_)) if wigs[wig_name].dependencies_ else ''))
+			print('{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies)) if wigs[wig_name].dependencies else ''))
 		print('')
 
 		build_script = [
