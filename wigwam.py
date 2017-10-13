@@ -112,7 +112,6 @@ class Wig(object):
 	config_access = []
 	dependencies = []
 	optional_dependencies = []
-	skip_stages = []
 
 	before_fetch, after_fetch = [], []
 	before_configure, after_configure = [], []
