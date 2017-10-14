@@ -191,11 +191,8 @@ class AutogenWig(Wig):
 		return ['bash autogen.sh', S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
 
 class PythonWig(Wig):
-	def configure(self):
-		return []
-
-	def build(self):
-		return []
+	configure = None
+	build = None
 
 	def install(self):
 		return S.python_setup_install
@@ -223,7 +220,13 @@ class AptWig(Wig):
 	pass
 
 class PipWig(Wig):
-	pass
+	wheel_path = None
+	fetch = None
+	configure = None
+	build = None
+
+	def install(self, pip_path = 'pip'):
+		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
 
 class WigConfig(object):
 	def __init__(self, dict_config):
