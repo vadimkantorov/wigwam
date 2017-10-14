@@ -203,7 +203,7 @@ class PythonWig(Wig):
 def CmakeWig(Wig):
 	cmake_flags = []
 
-	def __init__(self, **args, **kwargs):
+	def __init__(self, *args, **kwargs):
 		super(CmakeWig, self).__init__(*args, **kwargs)
 		self.require('cmake')
 
@@ -270,7 +270,7 @@ class WigConfig(object):
 
 	@staticmethod
 	def find_and_construct_wig(wig_name):
-		wig_class = [s for k, s in {}.items() if wig_name.startswith(k)] # [s for k, s in {'deb-' : DebWig, 'lua-' : LuarocksWig, 'pip-' : PipWig}.items() if wig_name.startswith(k)]
+		wig_class = []
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
@@ -301,7 +301,7 @@ class WigConfig(object):
 			visited.add(v)
 			for u in graph[v]:
 				if u not in visited:
-					dfs_(u)
+					dfs(u)
 		for v in wig_names:
 			if v not in visited:
 				dfs(v)
@@ -366,7 +366,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
 	print('Going to upgrade packages:' if len(patch) > 0 else 'No packages will be upgraded.')
 	for wig_name in patch:
-		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params'])))
+		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params']))))
 	end = WigConfig.patch_dict_config(old.copy(), patch)
 	WigConfig.save_dict_config(P.wigwamfile, end)
 
@@ -436,14 +436,14 @@ def build(wig_names, verbose = False, dry = False):
 
 		update_wigwamfile_installed(dict(_env = env))
 		for wig in map(wigs.get, installation_order):
-			stage_skip_stages = [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]
+			skip_stages_spec = [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]
 			debug_script, debug_script_path = [], P.debug_script(wig.name)
 			debug_script += [
 				'''PREFIX="{}"'''.format(os.path.abspath(P.prefix)),
 				'source "{}"'.format(P.activate_sh),
 				S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 			]
-			for stage, skip_stages in stage_skip_stages[1:]:
+			for stage, skip_stages in skip_stages_spec[1:]:
 				if all([getattr(wig, stage) is not None for stage in skip_stages]):
 					debug_script += ['(']
 					debug_script += getattr(wig, 'before_' + stage)
@@ -459,7 +459,7 @@ def build(wig_names, verbose = False, dry = False):
 				S.mkdir_p('$LOGBASE'),
 				'cd "{}"'.format(P.root)
 			]
-			for stage, skip_stages in stage_ is not None skip_stages:
+			for stage, skip_stages in skip_stages_spec:
 				if all([getattr(wig, stage) is not None for stage in skip_stages]):
 					build_script += [
 						'printf "%14s...  " {}'.format(stage.capitalize()),
