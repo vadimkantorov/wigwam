@@ -191,8 +191,7 @@ class AutogenWig(Wig):
 		return ['bash autogen.sh', S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
 
 class PythonWig(Wig):
-	configure = None
-	build = None
+	configure, build = None, None
 
 	def install(self):
 		return S.python_setup_install
@@ -200,8 +199,8 @@ class PythonWig(Wig):
 def CmakeWig(Wig):
 	cmake_flags = []
 
-	def __init__(self, *args, **kwargs):
-		super(CmakeWig, self).__init__(*args, **kwargs)
+	def __init__(self, name, *args, **kwargs):
+		super(CmakeWig, self).__init__(name, *args, **kwargs)
 		self.require('cmake')
 
 	def configure(self):
@@ -217,13 +216,25 @@ def CmakeWig(Wig):
 	#	self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
 class AptWig(Wig):
-	pass
+	configure, build = None, None
+	cache = {}
+
+	def __init__(self, name, *args, **kwargs):
+		super(AptWig, self).__init__(name, *args, **kwargs)
+		if self.name not in self.cache:
+			self.cache[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name])
+		self.deb_uris = re.findall("'(http.+)'", self.cache[self.name]) or []
+		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
+
+	def fetch(self):
+		return map(S.download, self.deb_uris, self.cached_deb_paths)
+
+	def install(self):
+		return map('dpkg -x "{}" "{}"'.format, self.cached_deb_paths, [P.prefix_deb] * len(self.cached_deb_paths))
 
 class PipWig(Wig):
 	wheel_path = None
-	fetch = None
-	configure = None
-	build = None
+	fetch, confugure, build = None, None, None
 
 	def install(self, pip_path = 'pip'):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
