@@ -239,6 +239,9 @@ class PipWig(Wig):
 	def install(self, pip_path = 'pip'):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
 
+class LuarocksWig(Wig):
+	pass
+
 class WigConfig(object):
 	def __init__(self, dict_config):
 		dict_config = dict_config.copy()
@@ -247,7 +250,7 @@ class WigConfig(object):
 
 		self.wigs = {}
 		for wig_name, wig_dict_config in self.dict_config().items():
-			wig = WigConfig.find_and_construct_wig(wig_name)
+			wig = WigConfig.find_and_construct_wig(wig_name, repo = wig_dict_config.get('repo'))
 			wig.load_dict_config(wig_dict_config, self.env)
 			wig.setup()
 			wig.enabled_features += wig_dict_config.get('enabled_features', [])
@@ -283,8 +286,8 @@ class WigConfig(object):
 		return dict_config
 
 	@staticmethod
-	def find_and_construct_wig(wig_name):
-		wig_class = []
+	def find_and_construct_wig(wig_name, repo = None):
+		wig_class = [cls for cls in [AptWig, PipWig, LuarocksWig] if repo and cls.__name__.lower().startswith(repo)]
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
@@ -349,12 +352,12 @@ def remove(wig_names):
 	WigConfig.save_dict_config(P.wigwamfile, requested)
 	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry, pip, luarocks, apt):
+def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry, apt, pip, luarocks):
 	init()
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
 	for wig_name in wig_names:
-		dict_config = WigConfig.find_and_construct_wig(wig_name).dict_config()
+		dict_config = WigConfig.find_and_construct_wig(wig_name, repo = 'apt' if apt else 'pip' if pip else 'luarocks' if luarocks else None).dict_config()
 		if enable:
 			dict_config['enabled_features'] = enable
 		if disable:
@@ -363,12 +366,6 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 			dict_config['fetch_params'].update(dict(fetch_method = 'git', git_tag = git))
 		elif version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
-		if apt:
-			dict_config['repo'] = 'apt'
-		elif pip:
-			dict_config['repo'] = 'pip'
-		elif luarocks:
-			dict_config['repo'] = 'luarocks'
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).find_unsatisfied_dependencies()))
 	
