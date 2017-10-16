@@ -361,8 +361,14 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 			dict_config['disabled_features'] = disable
 		if git:
 			dict_config['fetch_params'].update(dict(fetch_method = 'git', git_tag = git))
-		if version:
+		elif version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
+		if apt:
+			dict_config['repo'] = 'apt'
+		elif pip:
+			dict_config['repo'] = 'pip'
+		elif luarocks:
+			dict_config['repo'] = 'luarocks'
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).find_unsatisfied_dependencies()))
 	
