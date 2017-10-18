@@ -1,5 +1,6 @@
 class pytorch(PythonWig):
 	git_uri = 'https://github.com/pytorch/pytorch'
+	git_init_submodules = True
 	dependencies = ['numpy', 'cmake', 'pip-pyyaml', 'pip-cffi'] #, 'pip']
 	optional_dependencies = ['magma']
 	supported_features = ['cuda']
