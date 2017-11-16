@@ -3,8 +3,8 @@ class pytorch(PythonWig):
 	git_init_submodules = True
 	dependencies = ['numpy', 'cmake', 'pip-pyyaml', 'pip-cffi'] #, 'pip']
 	optional_dependencies = ['magma']
-	supported_features = ['cuda']
-	default_features = ['+cuda']
+	supported_features = ['cuda', 'cudnn']
+	default_features = ['+cuda', '+cudnn']
 	
 	# TODO: set env CUDA_HOME for custom CUDA path
 
@@ -13,3 +13,7 @@ class pytorch(PythonWig):
 			self.require('magma')
 		else:
 			self.before_install += [S.export('NO_CUDA', '1')]
+
+	def switch_cudnn(self, on):
+		if on:
+			self.before_install += [S.export('CUDNN_LIBRARY', os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))), S.export('CUDNN_INCLUDE_DIR',  os.path.join(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')), '../include'))]
