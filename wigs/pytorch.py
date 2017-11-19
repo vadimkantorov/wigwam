@@ -5,6 +5,7 @@ class pytorch(PythonWig):
 	optional_dependencies = ['magma']
 	supported_features = ['cuda', 'cudnn']
 	default_features = ['+cuda', '+cudnn']
+	config_access = ['PATH_TO_CUDNN_SO']
 	
 	# TODO: set env CUDA_HOME for custom CUDA path
 
