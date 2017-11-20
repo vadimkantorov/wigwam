@@ -115,8 +115,9 @@ class Wig(object):
 	make_flags = []
 	make_install_flags = []
 	
-	def __init__(self, name):
+	def __init__(self, name, repo):
 		self.name = name
+		self.repo = repo
 		self.bin_dirs = []
 		self.lib_dirs = []
 		self.include_dirs = []
@@ -128,13 +129,14 @@ class Wig(object):
 		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 
 	def dict_config(self):
-		if self.fetch_method == 'tar':
-			return dict(fetch_params = dict(fetch_method = self.fetch_method, version = self.version))
-		elif self.fetch_method == 'git':
-			find_last_git_commit = lambda: [commit for commit, head in map(str.split, filter(bool, subprocess.check_output(['git', 'ls-remote', self.git_uri]).split('\n'))) if (self.git_branch or 'HEAD') in head][0][:7]
-			return dict(fetch_params = dict(fetch_method = self.fetch_method, git_commit = self.git_commit or find_last_git_commit(), git_branch = self.git_branch))
-		else:
-			return {}
+		dict_config = dict(repo = self.repo, enabled_features = self.enabled_features, disabled_features = self.disabled_features)
+		if self.fetch is not None:
+			if self.fetch_method == 'tar':
+				dict_config['fetch_params'] = dict(fetch_method = self.fetch_method, version = self.version)
+			elif self.fetch_method == 'git':
+				find_last_git_commit = lambda: [commit for commit, head in map(str.split, filter(bool, subprocess.check_output(['git', 'ls-remote', self.git_uri]).split('\n'))) if (self.git_branch or 'HEAD') in head][0][:7]
+				dict_config['fetch_params'] = dict(fetch_method = self.fetch_method, git_commit = self.git_commit or find_last_git_commit(), git_branch = self.git_branch)
+		return dict_config
 	
 	def load_dict_config(self, dict_config, env):
 		self.env = env
@@ -143,7 +145,7 @@ class Wig(object):
 		self.fetch_params = dict(dict(fetch_method = self.fetch_method, version = self.version, git_uri = self.git_uri, git_branch = self.git_branch, git_commit = self.git_commit, tar_uri = self.tar_uri, tar_strip_components = self.tar_strip_components).items() + dict_config.get('fetch_params', {}).items())
 
 	def trace(self):
-		return dict(self.fetch_params.items() + dict(enabled_features = self.enabled_features, disabled_features = self.disabled_features).items())
+		return self.dict_config()
 	
 	def fetch(self):
 		def git(target_dir, git_uri, git_commit = None, git_branch = None, git_tag = None, **ignored):
@@ -199,8 +201,8 @@ class PythonWig(Wig):
 def CmakeWig(Wig):
 	cmake_flags = []
 
-	def __init__(self, name, *args, **kwargs):
-		super(CmakeWig, self).__init__(name, *args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super(CmakeWig, self).__init__(*args, **kwargs)
 		self.require('cmake')
 
 	def configure(self):
@@ -219,8 +221,8 @@ class AptWig(Wig):
 	configure, build = None, None
 	cache = {}
 
-	def __init__(self, name, *args, **kwargs):
-		super(AptWig, self).__init__(name, *args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super(AptWig, self).__init__(*args, **kwargs)
 		if self.name not in self.cache:
 			self.cache[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name])
 		self.deb_uris = re.findall("'(http.+)'", self.cache[self.name]) or []
@@ -236,6 +238,9 @@ class PipWig(Wig):
 	wheel_path = None
 	fetch, confugure, build = None, None, None
 
+	def __init__(self, name, repo = 'pip', *args, **kwargs):
+		super(PipWig, self).__init__(name, repo = repo, *args, **kwargs)
+
 	def install(self, pip_path = 'pip'):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
 
@@ -250,7 +255,7 @@ class WigConfig(object):
 
 		self.wigs = {}
 		for wig_name, wig_dict_config in self.dict_config().items():
-			wig = WigConfig.find_and_construct_wig(wig_name, repo = wig_dict_config.get('repo'))
+			wig = WigConfig.create_wig(wig_name, repo = wig_dict_config.get('repo'))
 			wig.load_dict_config(wig_dict_config, self.env)
 			wig.setup()
 			wig.enabled_features += wig_dict_config.get('enabled_features', [])
@@ -286,18 +291,18 @@ class WigConfig(object):
 		return dict_config
 
 	@staticmethod
-	def find_and_construct_wig(wig_name, repo = None):
-		wig_class = [cls for cls in [AptWig, PipWig, LuarocksWig] if repo and cls.__name__.lower().startswith(repo)]
+	def create_wig(wig_name, repo = None):
+		repo_ctor = [(repo, cls) for cls in [AptWig, PipWig, LuarocksWig] if repo and cls.__name__.lower().startswith(repo)]
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
 				exec content in globals(), globals()
-				wig_class += [globals().get(wig_name.replace('-', '_'))]
+				repo_ctor += [(repo, globals().get(wig_name.replace('-', '_')))]
 				break
 			except:
 				continue
-		assert wig_class, 'Package [{}] is not found'.format(wig_name)
-		return wig_class[0](wig_name)
+		assert repo_ctor, 'Package [{}] is not found'.format(wig_name)
+		return repo_ctor[0][1](wig_name, repo_ctor[0][0])
 		
 	def diff(self, graph):
 		to_install = {}
@@ -328,7 +333,7 @@ class WigConfig(object):
 		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies if dep_wig_name not in wig_config.wigs))}
 		end = self.dict_config().copy()
 		while True:
-			to_install = {wig_name : WigConfig.find_and_construct_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
+			to_install = {wig_name : WigConfig.create_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
 			if len(to_install) == 0:
 				break
 			end = WigConfig.patch_dict_config(end, to_install)
@@ -357,7 +362,7 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
 	for wig_name in wig_names:
-		dict_config = WigConfig.find_and_construct_wig(wig_name, repo = 'apt' if apt else 'pip' if pip else 'luarocks' if luarocks else None).dict_config()
+		dict_config = WigConfig.create_wig(wig_name, repo = 'apt' if apt else 'pip' if pip else 'luarocks' if luarocks else None).dict_config()
 		if enable:
 			dict_config['enabled_features'] = enable
 		if disable:
@@ -380,7 +385,7 @@ def upgrade(wig_names, recursive, verbose, dry):
 	init()
 
 	old = WigConfig.read_dict_config(P.wigwamfile)
-	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.find_and_construct_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
+	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.create_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
 	print('Going to upgrade packages:' if len(patch) > 0 else 'No packages will be upgraded.')
 	for wig_name in patch:
 		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params']))))
@@ -598,7 +603,7 @@ def search(wig_name):
 			else:
 				yield filter_wig_names(os.listdir(repo)) if os.path.exists(repo) else []
 		
-	wigs = map(WigConfig.find_and_construct_wig, sorted(set([wig_name] if wig_name else itertools.chain(*all_wig_names()))))
+	wigs = map(WigConfig.create_wig, sorted(set([wig_name] if wig_name else itertools.chain(*all_wig_names()))))
 	print(json.dumps(map(to_json, wigs), indent = 2, sort_keys = True))
 
 def run(dry, verbose, cmds = []):
