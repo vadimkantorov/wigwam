@@ -174,13 +174,9 @@ class Wig(object):
 	def setup(self):
 		pass
 
-	def process_feature_hooks(self):
-		for on, feat_name in zip(itertools.repeat(True), self.enabled_features) + zip(itertools.repeat(False), self.disabled_features):
-			f1, f2 = 'switch_{}_{}'.format(feat_name, S.onoff(on)), 'switch_{}'.format(feat_name)
-			if hasattr(self, f1):
-				getattr(self, f1)()
-			else:
-				getattr(self, f2)(on)
+	def call_feature_hooks(self):
+		for state, feature_name in zip(itertools.repeat(True), self.enabled_features) + zip(itertools.repeat(False), self.disabled_features):
+			getattr(self, feature_name, lambda _: None)(state)
 
 	def getenv(self, name):
 		return self.env.get(name)
@@ -263,7 +259,7 @@ class WigConfig(object):
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs:
-			self.wigs[wig_name].process_feature_hooks()
+			self.wigs[wig_name].call_feature_hooks()
 
 		flatten = lambda xs: list(itertools.chain(*xs))
 		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs.values()))

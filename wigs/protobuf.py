@@ -3,5 +3,5 @@ class protobuf(AutogenWig):
 	git_uri = 'https://github.com/google/protobuf'
 	version = '3.1.0'
 	
-	def switch_python_on(self):
+	def python(self, on):
 		self.after_install += ['cd python', S.python_setup_install]

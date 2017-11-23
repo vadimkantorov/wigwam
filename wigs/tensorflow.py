@@ -17,21 +17,21 @@ class tensorflow(PipWig):
 			S.export('TF_ENABLE_XLA', 1)
 		]
 		self.wheel_path = 'build/tensorflow-*.whl'
+
+	def build(self):
+		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package "$PWD/build"']
 		
-	def switch_cuda(self, on):
-		#default_features = ['+cuda']
+	def cuda(self, on = True):
 		if on:	
 			self.before_configure += [
 				S.export('TF_NEED_CUDA', 1),
 				S.export('TF_CUDA_COMPUTE_CAPABILITIES', '3.5,5.2'),
 				S.export('CUDA_TOOLKIT_PATH', os.path.dirname(os.path.dirname(self.getenv('PATH_TO_NVCC')))),
 				S.export('CUDNN_INSTALL_PATH', os.path.dirname(os.path.dirname(self.getenv('PATH_TO_CUDNN_SO')))),
-				S.export('TF_CUDA_VERSION', '8.0'),
-				S.export('TF_CUDNN_VERSION', 5)
+				S.export('TF_CUDA_VERSION', '8.0'), # TODO: get cuda version
+				S.export('TF_CUDNN_VERSION', 5) # TODO: get cudnn version
 			]
 			self.lib_dirs += [os.path.dirname(self.getenv('PATH_TO_CUDNN_SO'))]
 		else:
 			self.before_configure += [S.export('TF_NEED_CUDA', 0)]
 		
-	def build(self):
-		return ['bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package', S.mkdir_p('build'), 'bash bazel-bin/tensorflow/tools/pip_package/build_pip_package "$PWD/build"']

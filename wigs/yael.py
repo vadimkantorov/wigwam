@@ -3,14 +3,13 @@ class yael(Wig):
 	version = '438'
 	install = None
 
-	#drop prefix
 	def configure(self):
 		return 'bash configure.sh {}'.format(' '.join(self.configure_flags))
 
-	def switch_python_on(self):
-		self.require('swig')
-		self.configure_flags += ['--enable-numpy']
-	
-	def switch_atlas_on(self):
+	def atlas(self, on = True):
 		self.require('atlas')
 		self.before_configure += [S.export(S.LDFLAGS, '-lf77blas -llapack')]
+
+	def python(self, on):
+		self.require('swig')
+		self.configure_flags += ['--enable-numpy']

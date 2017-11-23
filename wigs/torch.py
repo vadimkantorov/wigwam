@@ -1,7 +1,6 @@
 class torch(CmakeWig):
 	git_uri = 'https://github.com/torch/distro'
 	dependencies = ['openblas', 'readline', 'ncurses', 'gnuplot', 'libjpeg', 'unzip', 'cmake']
-	#default_features = ['+cuda', '+qt', '+cudnn']
 	
 	@staticmethod
 	def luarocks_make(rockspec_path):
@@ -41,14 +40,8 @@ class torch(CmakeWig):
 		'extra/threads/rocks/threads-scm-1.rockspec',
 		'extra/argcheck/rocks/argcheck-scm-1.rockspec',
 	])
-	
-	def switch_qt_on(self):
-		self.after_install += map(torch.luarocks_make, [
-			'exe/qtlua/rocks/qtlua-scm-1.rockspec',
-			'pkg/qttorch/rocks/qttorch-scm-1.rockspec'
-		])
 
-	def switch_cuda_on(self):
+	def cuda(self, on = True):
 		self.require('magma')
 		CUDA_BIN_PATH = os.path.dirname(self.getenv('PATH_TO_NVCC'))
 		self.lib_dirs += [os.path.join(CUDA_BIN_PATH, '../lib64')]
@@ -59,5 +52,11 @@ class torch(CmakeWig):
 			'extra/cudnn/cudnn-scm-1.rockspec'
 		])
 
-	def switch_cudnn_on(self):
+	def cudnn(self, on = True):
 		self.lib_dirs += [os.path.dirname(self.getenv('PATH_TO_CUDNN_SO'))]
+	
+	def qt(self, on = True):
+		self.after_install += map(torch.luarocks_make, [
+			'exe/qtlua/rocks/qtlua-scm-1.rockspec',
+			'pkg/qttorch/rocks/qttorch-scm-1.rockspec'
+		])
