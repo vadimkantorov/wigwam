@@ -4,12 +4,12 @@ import sys
 import json
 import pipes
 import shutil
-import urllib2
-import urlparse
 import argparse
 import itertools
-import traceback
+import inspect
 import subprocess
+import urllib2
+import urlparse
 
 class P(object):
 	bugreport_page = 'http://github.com/vadimkantorov/wigwam/issues'
@@ -111,25 +111,22 @@ class Wig(object):
 	before_configure, after_configure = [], []
 	before_build, after_build = [], []
 	before_install, after_install = [], []
-	configure_flags = []
-	make_flags = []
-	make_install_flags = []
+	configure_flags, make_flags, make_install_flags = [], [], []
 	
 	def __init__(self, name, repo):
 		self.name = name
 		self.repo = repo
+		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
 		self.bin_dirs = []
 		self.lib_dirs = []
 		self.include_dirs = []
 		self.python_dirs = []
 		self.env = {}
-		self.enabled_features = []
-		self.disabled_features = []
 		self.fetch_method = self.fetch_method or ('uri' if hasattr(self, 'uri') else 'tar' if hasattr(self, 'tar_uri') else 'git' if hasattr(self, 'git_uri') else None)
-		self.paths = type('', (), dict(src_dir = os.path.join(P.src_tree, self.name)))()
+		self.features = {feature_name: argspec.defaults[0] for feature_name in dir(self) if feature_name not in dir(Wig) for func in [getattr(self, feature_name)] if inspect.ismethod(func) or inspect.isfunction(func) for argspec in [inspect.getargspec(func)] if len(argspec.defaults) == 1}
 
 	def dict_config(self):
-		dict_config = dict(repo = self.repo, enabled_features = self.enabled_features, disabled_features = self.disabled_features)
+		dict_config = dict(repo = self.repo, features = self.features)
 		if self.fetch is not None:
 			if self.fetch_method == 'tar':
 				dict_config['fetch_params'] = dict(fetch_method = self.fetch_method, version = self.version)
@@ -140,8 +137,7 @@ class Wig(object):
 	
 	def load_dict_config(self, dict_config, env):
 		self.env = env
-		self.enabled_features += dict_config.get('enabled_features', [])
-		self.disabled_features += dict_config.get('disabled_features', [])
+		self.features = dict(self.features.items() + dict_config.get('features', {}).items())
 		self.fetch_params = dict(dict(fetch_method = self.fetch_method, version = self.version, git_uri = self.git_uri, git_branch = self.git_branch, git_commit = self.git_commit, tar_uri = self.tar_uri, tar_strip_components = self.tar_strip_components).items() + dict_config.get('fetch_params', {}).items())
 
 	def trace(self):
@@ -175,7 +171,7 @@ class Wig(object):
 		pass
 
 	def call_feature_hooks(self):
-		for state, feature_name in zip(itertools.repeat(True), self.enabled_features) + zip(itertools.repeat(False), self.disabled_features):
+		for feature_name, state in self.features.items():
 			getattr(self, feature_name, lambda _: None)(state)
 
 	def getenv(self, name):
@@ -183,6 +179,9 @@ class Wig(object):
 
 	def require(self, wig_name):
 		self.dependencies.append(wig_name)
+
+	def __str__(self):
+		return self.name
 
 class AutogenWig(Wig):
 	def configure(self):
@@ -217,8 +216,8 @@ class AptWig(Wig):
 	configure, build = None, None
 	cache = {}
 
-	def __init__(self, *args, **kwargs):
-		super(AptWig, self).__init__(*args, **kwargs)
+	def __init__(self, name, repo = 'apt', *args, **kwargs):
+		super(AptWig, self).__init__(name, repo = repo, *args, **kwargs)
 		if self.name not in self.cache:
 			self.cache[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name])
 		self.deb_uris = re.findall("'(http.+)'", self.cache[self.name]) or []
@@ -240,22 +239,24 @@ class PipWig(Wig):
 	def install(self, pip_path = 'pip'):
 		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
 
+	def __str__(self):
+		return super(PipWig, self).__str__() + ' (pip)'
+
 class LuarocksWig(Wig):
 	pass
 
 class WigConfig(object):
 	def __init__(self, dict_config):
-		dict_config = dict_config.copy()
-		self.env = dict_config.pop('_env', {})
 		self.dict_config = lambda: dict_config
+		dict_config_no_env = dict_config.copy()
+		self.env = dict_config_no_env.pop('_env', {})
 
 		self.wigs = {}
-		for wig_name, wig_dict_config in self.dict_config().items():
+		for wig_name, wig_dict_config in dict_config_no_env.items():
 			wig = WigConfig.create_wig(wig_name, repo = wig_dict_config.get('repo'))
 			wig.load_dict_config(wig_dict_config, self.env)
 			wig.setup()
-			wig.enabled_features += wig_dict_config.get('enabled_features', [])
-			wig.disabled_features += wig_dict_config.get('disabled_features', [])
+			wig.features = dict(wig.features.items() + wig_dict_config.get('features', {}).items())
 			self.wigs[wig_name] = wig
 
 		for wig_name in self.wigs:
@@ -292,7 +293,7 @@ class WigConfig(object):
 		for repo in P.repos:
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
-				exec content in globals(), globals()
+				exec content in globals(), globals() #TODO: throw if exception during exec
 				repo_ctor += [(repo, globals().get(wig_name.replace('-', '_')))]
 				break
 			except:
@@ -305,7 +306,7 @@ class WigConfig(object):
 		for wig_name, wig in self.wigs.items():
 			other = graph.wigs.get(wig_name)
 			if wig.trace() != (other.trace() if other is not None else None):
-				to_install[wig_name] = dict(enabled_features = wig.enabled_features, disabled_features = wig.disabled_features, fetch_params = wig.fetch_params)
+				to_install[wig_name] = dict(features = wig.features, fetch_params = wig.fetch_params)
 		return to_install
 
 	def compute_installation_order(self):
@@ -359,10 +360,7 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	end = WigConfig.patch_dict_config(WigConfig.read_dict_config(P.wigwamfile), dict(_env = env))
 	for wig_name in wig_names:
 		dict_config = WigConfig.create_wig(wig_name, repo = 'apt' if apt else 'pip' if pip else 'luarocks' if luarocks else None).dict_config()
-		if enable:
-			dict_config['enabled_features'] = enable
-		if disable:
-			dict_config['disabled_features'] = disable
+		dict_config['features'] = dict(dict_config.get('features', {}).items() + zip(enable, itertools.repeat(True)) + zip(disable, itertools.repeat(False)))
 		if git:
 			dict_config['fetch_params'].update(dict(fetch_method = 'git', git_tag = git))
 		elif version:
