@@ -2,7 +2,7 @@ class opencv(CmakeWig):
 	tar_uri = 'https://github.com/itseez/opencv/archive/{version}.tar.gz'
 	git_uri = 'https://github.com/itseez/opencv'
 	version = '3.2.0'
-	dependencies = ['pkg-config']
+	dependencies = ['pkg_config']
 
 	def ffmpeg(self, on = True):
 		self.require('ffmpeg')
