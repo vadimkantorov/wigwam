@@ -170,10 +170,6 @@ class Wig(object):
 	def setup(self):
 		pass
 
-	def call_feature_hooks(self):
-		for feature_name, state in self.features.items():
-			getattr(self, feature_name, lambda _: None)(state)
-
 	def getenv(self, name):
 		return self.env.get(name)
 
@@ -182,6 +178,9 @@ class Wig(object):
 
 	def __str__(self):
 		return self.name
+
+	def __repr__(self):
+		return '{}({}, {})'.format(self.__class__.__name__, repr(self.name), repr(self.repo))
 
 class AutogenWig(Wig):
 	def configure(self):
@@ -209,8 +208,8 @@ def CmakeWig(Wig):
 	def install(self):
 		return [S.CD_BUILD] + super(CmakeWig, self).install()
 
-	#def switch_debug(self, on):
-	#	self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
+	def debug(self, on):
+		self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
 
 class AptWig(Wig):
 	configure, build = None, None
@@ -228,6 +227,9 @@ class AptWig(Wig):
 
 	def install(self):
 		return map('dpkg -x "{}" "{}"'.format, self.cached_deb_paths, [P.prefix_deb] * len(self.cached_deb_paths))
+
+	def __str__(self):
+		return super(AptWig, self).__str__() + ' (apt)'
 
 class PipWig(Wig):
 	wheel_path = None
@@ -259,8 +261,9 @@ class WigConfig(object):
 			wig.features = dict(wig.features.items() + wig_dict_config.get('features', {}).items())
 			self.wigs[wig_name] = wig
 
-		for wig_name in self.wigs:
-			self.wigs[wig_name].call_feature_hooks()
+		for wig in self.wigs.values():
+			for feature_name, state in wig.features.items():
+				getattr(wig, feature_name, lambda _: None)(state)
 
 		flatten = lambda xs: list(itertools.chain(*xs))
 		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs.values()))
@@ -294,7 +297,7 @@ class WigConfig(object):
 			try:
 				content = (open if 'github.com' not in repo else urllib2.urlopen)(os.path.join(repo.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/'), wig_name + '.py')).read()
 				exec content in globals(), globals() #TODO: throw if exception during exec
-				repo_ctor += [(repo, globals().get(wig_name.replace('-', '_')))]
+				repo_ctor += [(repo, globals().get(wig_name))]
 				break
 			except:
 				continue
@@ -314,7 +317,7 @@ class WigConfig(object):
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
 	def find_dependencies(self, wig_names, dependencies = True, dependent = False):
-		graph = {wig_name : self.wigs[wig_name].dependencies for wig_name in self.wigs} if dependencies else {wig_name : filter(lambda w: wig_name in self.wigs[w].dependencies, self.wigs) for wig_name in self.wigs}
+		graph = {repr(wig) : wig.dependencies for wig in self.wigs.values()} if dependencies else {repr(wig) : map(repr, filter(lambda w: wig in self.wigs[w].dependencies, self.wigs.values())) for wig in self.wigs.values()}
 		visited = set()
 		def dfs(v):
 			visited.add(v)
@@ -327,7 +330,7 @@ class WigConfig(object):
 		return visited
 
 	def find_unsatisfied_dependencies(self):
-		get_immediate_unsatisfied_dependencies = lambda wig_config: {x : [] for x in set((dep_wig_name for wig in wig_config.wigs.values() for dep_wig_name in wig.dependencies if dep_wig_name not in wig_config.wigs))}
+		get_immediate_unsatisfied_dependencies = lambda wig_config: set(dep_wig for wig in wig_config.wigs.values() for dep_wig in wig.dependencies if not wig_config.contains(dep_wig))
 		end = self.dict_config().copy()
 		while True:
 			to_install = {wig_name : WigConfig.create_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
@@ -335,6 +338,9 @@ class WigConfig(object):
 				break
 			end = WigConfig.patch_dict_config(end, to_install)
 		return WigConfig(end).diff(self)
+
+	def contains(self, wig):
+		return repr(wig) in map(repr, self.wigs.values())
 
 def remove(wig_names):
 	init()
@@ -344,7 +350,7 @@ def remove(wig_names):
 	
 	for wig_name in wig_names:
 		if wig_name in installed:
-			print('Package [{}] is already installed, artefacts will not be removed.'.format(wig_name))
+			print('Artefacts for package [{}] will not be removed, artefact removal is not supported yet.'.format(wig_name))
 		requested.pop(wig_name, None)
 		installed.pop(wig_name, None)
 		src_dir = os.path.join(P.src_tree, wig_name)
