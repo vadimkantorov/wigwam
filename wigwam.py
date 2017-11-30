@@ -316,28 +316,28 @@ class WigConfig(object):
 		transitive_closure = {wig_name : self.find_dependencies([wig_name]) for wig_name in self.wigs}
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
-	def find_dependencies(self, wig_names, dependencies = True, dependent = False):
-		graph = {repr(wig) : wig.dependencies for wig in self.wigs.values()} if dependencies else {repr(wig) : map(repr, filter(lambda w: wig in self.wigs[w].dependencies, self.wigs.values())) for wig in self.wigs.values()}
-		visited = set()
-		def dfs(v):
-			visited.add(v)
-			for u in graph[v]:
-				if u not in visited:
-					dfs(u)
-		for v in wig_names:
-			if v not in visited:
-				dfs(v)
-		return visited
-
-	def find_unsatisfied_dependencies(self):
-		get_immediate_unsatisfied_dependencies = lambda wig_config: set(dep_wig for wig in wig_config.wigs.values() for dep_wig in wig.dependencies if not wig_config.contains(dep_wig))
-		end = self.dict_config().copy()
-		while True:
-			to_install = {wig_name : WigConfig.create_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
-			if len(to_install) == 0:
-				break
-			end = WigConfig.patch_dict_config(end, to_install)
-		return WigConfig(end).diff(self)
+	def find_dependencies(self, wig_names = None, dependencies = True, dependent = False, unsatisfied = False):
+		if wig_names is None and unsatisfied:
+			get_immediate_unsatisfied_dependencies = lambda wig_config: set(dep_wig for wig in wig_config.wigs.values() for dep_wig in wig.dependencies if not wig_config.contains(dep_wig))
+			end = self.dict_config().copy()
+			while True:
+				to_install = {wig_name : WigConfig.create_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
+				if len(to_install) == 0:
+					break
+				end = WigConfig.patch_dict_config(end, to_install)
+			return WigConfig(end).diff(self)
+		else:
+			graph = {repr(wig) : wig.dependencies for wig in self.wigs.values()} if dependencies else {repr(wig) : map(repr, filter(lambda w: wig in self.wigs[w].dependencies, self.wigs.values())) for wig in self.wigs.values()}
+			visited = set()
+			def dfs(v):
+				visited.add(v)
+				for u in graph[v]:
+					if u not in visited:
+						dfs(u)
+			for v in wig_names:
+				if v not in visited:
+					dfs(v)
+			return visited
 
 	def contains(self, wig):
 		return repr(wig) in map(repr, self.wigs.values())
@@ -372,7 +372,7 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 		elif version:
 			dict_config['fetch_params'].update(dict(fetch_method = 'tar', version = version))
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
-	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).find_unsatisfied_dependencies()))
+	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).find_dependencies(unsatisfied = True)))
 	
 	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	requested = WigConfig(end)
