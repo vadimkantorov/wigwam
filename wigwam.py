@@ -170,8 +170,8 @@ class Wig(object):
 	def setup(self):
 		pass
 
-	def getenv(self, name):
-		return self.env.get(name)
+	def getenv(self, key):
+		return self.env.get(key)
 
 	def require(self, wig_name):
 		self.dependencies.append(wig_name)
@@ -253,7 +253,7 @@ class WigConfig(object):
 
 	def find_dependencies(self, wig_names = None, dependencies = True, dependent = False, unsatisfied = False):
 		if wig_names is None and unsatisfied:
-			get_immediate_unsatisfied_dependencies = lambda wig_config: set(dep_wig for wig in wig_config.wigs.values() for dep_wig in wig.dependencies if not wig_config.contains(dep_wig))
+			get_immediate_unsatisfied_dependencies = lambda wig_config: set(dep_wig for wig in wig_config.wigs.values() for dep_wig in wig.dependencies if dep_wig not in wig_config)
 			end = self.dict_config().copy()
 			while True:
 				to_install = {wig_name : WigConfig.create_wig(wig_name).dict_config() for wig_name in get_immediate_unsatisfied_dependencies(WigConfig(end))}
@@ -274,9 +274,8 @@ class WigConfig(object):
 					dfs(v)
 			return visited
 
-	def contains(self, wig):
+	def __contains__(self, wig):
 		return repr(wig) in map(repr, self.wigs)
-
 
 class AutogenWig(Wig):
 	def configure(self):
@@ -343,24 +342,6 @@ class PipWig(Wig):
 class LuarocksWig(Wig):
 	pass
 
-def remove(wig_names):
-	init()
-	
-	requested = WigConfig.read_dict_config(P.wigwamfile)
-	installed = WigConfig.read_dict_config(P.wigwamfile_installed)
-	
-	for wig_name in wig_names:
-		if wig_name in installed:
-			print('Artefacts for package [{}] will not be removed, artefact removal is not supported yet.'.format(wig_name))
-		requested.pop(wig_name, None)
-		installed.pop(wig_name, None)
-		src_dir = os.path.join(P.src_tree, wig_name)
-		if os.path.exists(src_dir):
-			shutil.rmtree(src_dir)
-			
-	WigConfig.save_dict_config(P.wigwamfile, requested)
-	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
-
 def install(wig_names, wigwamfile, enable, disable, git, version, env, force, verbose, dry, apt, pip, luarocks):
 	init()
 	
@@ -377,26 +358,41 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 	
 	requested, installed = WigConfig(end), WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	dependencies = requested.find_dependencies(wig_names or (set(requested) - set(installed)), dependencies = True)
-	to_build = filter(lambda wig_name: force or wig_name not in installed, dependencies)
+	build(filter(lambda wig: force or wig not in installed, dependencies) verbose = verbose, dry = dry)
 
-	build(to_build, verbose = verbose, dry = dry)
+#def upgrade(wig_names, recursive, verbose, dry):
+#	init()
+#
+#	old = WigConfig.read_dict_config(P.wigwamfile)
+#	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.create_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
+#	print('Going to upgrade packages:' if len(patch) > 0 else 'No packages will be upgraded.')
+#	for wig_name in patch:
+#		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params']))))
+#	end = WigConfig.patch_dict_config(old.copy(), patch)
+#	WigConfig.save_dict_config(P.wigwamfile, end)
+#
+#	requested, installed = WigConfig(end), WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
+#	dependencies = requested.find_dependencies(wig_names, dependencies = True) + (requested.find_dependencies(wig_names, dependent = True) if recursive else [])
+#	build(filter(lambda wig: force or wig not in installed, dependencies) verbose = verbose, dry = dry)
 
-def upgrade(wig_names, recursive, verbose, dry):
-	init()
+#def remove(wig_names):
+#	init()
+#	
+#	requested = WigConfig.read_dict_config(P.wigwamfile)
+#	installed = WigConfig.read_dict_config(P.wigwamfile_installed)
+#	
+#	for wig_name in wig_names:
+#		if wig_name in installed:
+#			print('Artefacts for package [{}] will not be removed, artefact removal is not supported yet.'.format(wig_name))
+#		requested.pop(wig_name, None)
+#		installed.pop(wig_name, None)
+#		src_dir = os.path.join(P.src_tree, wig_name)
+#		if os.path.exists(src_dir):
+#			shutil.rmtree(src_dir)
+#			
+#	WigConfig.save_dict_config(P.wigwamfile, requested)
+#	WigConfig.save_dict_config(P.wigwamfile_installed, installed)
 
-	old = WigConfig.read_dict_config(P.wigwamfile)
-	patch = {wig_name : dict(fetch_params = fetch_params_new) for wig_name in (wig_names or sorted(old)) if wig_name != '_env' for fetch_params_new in [WigConfig.create_wig(wig_name).dict_config().get('fetch_params')] if wig_name in old and fetch_params_new != old[wig_name].get('fetch_params')}
-	print('Going to upgrade packages:' if len(patch) > 0 else 'No packages will be upgraded.')
-	for wig_name in patch:
-		print('\t[{0}]: {1} -> {2}'.format(wig_name, json.dumps(old[wig_name]['fetch_params'], json.dumps(patch[wig_name]['fetch_params']))))
-	end = WigConfig.patch_dict_config(old.copy(), patch)
-	WigConfig.save_dict_config(P.wigwamfile, end)
-
-	requested, installed = WigConfig(end), WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
-	dependencies = requested.find_dependencies(wig_names, dependencies = True) + (requested.find_dependencies(wig_names, dependent = True) if recursive else [])
-	to_build = filter(lambda wig_name: force or wig_name not in installed, dependencies)
-
-	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
 def build(wig_names, verbose = False, dry = False):
 	def write_build_script(installation_script_path, env, installation_order):
