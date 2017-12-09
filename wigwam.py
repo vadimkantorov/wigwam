@@ -182,94 +182,29 @@ class Wig(object):
 	def __repr__(self):
 		return '{}({}, {})'.format(self.__class__.__name__, repr(self.name), repr(self.repo))
 
-class AutogenWig(Wig):
-	def configure(self):
-		return ['bash autogen.sh', S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
-
-class PythonWig(Wig):
-	configure, build = None, None
-
-	def install(self):
-		return S.python_setup_install
-
-def CmakeWig(Wig):
-	cmake_flags = []
-
-	def __init__(self, *args, **kwargs):
-		super(CmakeWig, self).__init__(*args, **kwargs)
-		self.require('cmake')
-
-	def configure(self):
-		return [S.MKDIR_BUILD, S.CD_BUILD, 'cmake {} ..'.format(' '.join([S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG] + self.cmake_flags))]
-
-	def build(self):
-		return [S.CD_BUILD] + super(CmakeWig, self).build()
-
-	def install(self):
-		return [S.CD_BUILD] + super(CmakeWig, self).install()
-
-	def debug(self, on):
-		self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
-
-class AptWig(Wig):
-	configure, build = None, None
-	cache = {}
-
-	def __init__(self, name, repo = 'apt', *args, **kwargs):
-		super(AptWig, self).__init__(name, repo = repo, *args, **kwargs)
-		if self.name not in self.cache:
-			self.cache[self.name] = subprocess.check_output(['apt-get', '--print-uris', '--yes', '--reinstall', 'install', self.name])
-		self.deb_uris = re.findall("'(http.+)'", self.cache[self.name]) or []
-		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
-
-	def fetch(self):
-		return map(S.download, self.deb_uris, self.cached_deb_paths)
-
-	def install(self):
-		return map('dpkg -x "{}" "{}"'.format, self.cached_deb_paths, [P.prefix_deb] * len(self.cached_deb_paths))
-
-	def __str__(self):
-		return super(AptWig, self).__str__() + ' (apt)'
-
-class PipWig(Wig):
-	wheel_path = None
-	fetch, confugure, build = None, None, None
-
-	def __init__(self, name, repo = 'pip', *args, **kwargs):
-		super(PipWig, self).__init__(name, repo = repo, *args, **kwargs)
-
-	def install(self, pip_path = 'pip'):
-		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
-
-	def __str__(self):
-		return super(PipWig, self).__str__() + ' (pip)'
-
-class LuarocksWig(Wig):
-	pass
-
 class WigConfig(object):
 	def __init__(self, dict_config):
 		self.dict_config = lambda: dict_config
 		dict_config_no_env = dict_config.copy()
 		self.env = dict_config_no_env.pop('_env', {})
 
-		self.wigs = {}
+		self.wigs = []
 		for wig_name, wig_dict_config in dict_config_no_env.items():
 			wig = WigConfig.create_wig(wig_name, repo = wig_dict_config.get('repo'))
 			wig.load_dict_config(wig_dict_config, self.env)
 			wig.setup()
 			wig.features = dict(wig.features.items() + wig_dict_config.get('features', {}).items())
-			self.wigs[wig_name] = wig
+			self.wigs.append(wig)
 
-		for wig in self.wigs.values():
+		for wig in self.wigs:
 			for feature_name, state in wig.features.items():
 				getattr(wig, feature_name, lambda _: None)(state)
 
 		flatten = lambda xs: list(itertools.chain(*xs))
-		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs.values()))
-		self.lib_dirs = P.prefix_lib_dirs + flatten(map(lambda wig: wig.lib_dirs, self.wigs.values()))
-		self.include_dirs = P.prefix_include_dirs + flatten(map(lambda wig: wig.include_dirs, self.wigs.values()))
-		self.python_dirs = P.prefix_python_dirs + flatten(map(lambda wig: wig.python_dirs, self.wigs.values()))
+		self.bin_dirs = P.prefix_bin_dirs + flatten(map(lambda wig: wig.bin_dirs, self.wigs))
+		self.lib_dirs = P.prefix_lib_dirs + flatten(map(lambda wig: wig.lib_dirs, self.wigs))
+		self.include_dirs = P.prefix_include_dirs + flatten(map(lambda wig: wig.include_dirs, self.wigs))
+		self.python_dirs = P.prefix_python_dirs + flatten(map(lambda wig: wig.python_dirs, self.wigs))
 
 	@staticmethod
 	def read_dict_config(path):
@@ -313,7 +248,7 @@ class WigConfig(object):
 		return to_install
 
 	def compute_installation_order(self):
-		transitive_closure = {wig_name : self.find_dependencies([wig_name]) for wig_name in self.wigs}
+		transitive_closure = {repr(wig) : self.find_dependencies([wig]) for wig in self.wigs}
 		return sorted(self.wigs, cmp = lambda l, r: -1 if l in transitive_closure[r] else 1 if r in transitive_closure[l] else cmp(l.lower(), r.lower()))
 
 	def find_dependencies(self, wig_names = None, dependencies = True, dependent = False, unsatisfied = False):
@@ -327,7 +262,7 @@ class WigConfig(object):
 				end = WigConfig.patch_dict_config(end, to_install)
 			return WigConfig(end).diff(self)
 		else:
-			graph = {repr(wig) : wig.dependencies for wig in self.wigs.values()} if dependencies else {repr(wig) : map(repr, filter(lambda w: wig in self.wigs[w].dependencies, self.wigs.values())) for wig in self.wigs.values()}
+			graph = {repr(wig) : wig.dependencies for wig in self.wigs} if dependencies else {repr(wig) : map(repr, filter(lambda w: wig in self.wigs[w].dependencies, self.wigs)) for wig in self.wigs}
 			visited = set()
 			def dfs(v):
 				visited.add(v)
@@ -340,7 +275,73 @@ class WigConfig(object):
 			return visited
 
 	def contains(self, wig):
-		return repr(wig) in map(repr, self.wigs.values())
+		return repr(wig) in map(repr, self.wigs)
+
+
+class AutogenWig(Wig):
+	def configure(self):
+		return ['bash autogen.sh', S.configure([S.PREFIX_CONFIGURE_FLAG] + self.configure_flags)]
+
+class PythonWig(Wig):
+	configure, build = None, None
+
+	def install(self):
+		return S.python_setup_install
+
+def CmakeWig(Wig):
+	cmake_flags = []
+
+	def __init__(self, *args, **kwargs):
+		super(CmakeWig, self).__init__(*args, **kwargs)
+		self.require('cmake')
+
+	def configure(self):
+		return [S.MKDIR_BUILD, S.CD_BUILD, 'cmake {} ..'.format(' '.join([S.CMAKE_INSTALL_PREFIX_FLAG, S.CMAKE_PREFIX_PATH_FLAG] + self.cmake_flags))]
+
+	def build(self):
+		return [S.CD_BUILD] + super(CmakeWig, self).build()
+
+	def install(self):
+		return [S.CD_BUILD] + super(CmakeWig, self).install()
+
+	def debug(self, on):
+		self.cmake_flags += ['-DCMAKE_BUILD_TYPE=%s' % ('DEBUG' if on else 'RELEASE')]
+
+class AptWig(Wig):
+	configure, build = None, None
+	cache = {}
+
+	def __init__(self, name, repo = 'apt', *args, **kwargs):
+		super(AptWig, self).__init__(name, repo = repo, *args, **kwargs)
+		if self.name not in self.cache:
+			self.cache[self.name] = subprocess.check_output(['apt', '--print-uris', '--yes', '--reinstall', 'install', self.name])
+		self.deb_uris = re.findall("'(http.+)'", self.cache[self.name]) or []
+		self.cached_deb_paths = [os.path.join(P.deb_root, os.path.basename(uri)) for uri in self.deb_uris]
+
+	def fetch(self):
+		return map(S.download, self.deb_uris, self.cached_deb_paths)
+
+	def install(self):
+		return map('dpkg -x "{}" "{}"'.format, self.cached_deb_paths, [P.prefix_deb] * len(self.cached_deb_paths))
+
+	def __str__(self):
+		return super(AptWig, self).__str__() + ' (apt)'
+
+class PipWig(Wig):
+	wheel_path = None
+	fetch, confugure, build = None, None, None
+
+	def __init__(self, name, repo = 'pip', *args, **kwargs):
+		super(PipWig, self).__init__(name, repo = repo, *args, **kwargs)
+
+	def install(self, pip_path = 'pip'):
+		return [S.export('PYTHONUSERBASE', S.PREFIX_PYTHON), '"{}" install --force-reinstall --ignore-installed --user "{}"'.format(pip_path, self.name if self.wheel_path is None else self.wheel_path)]
+
+	def __str__(self):
+		return super(PipWig, self).__str__() + ' (pip)'
+
+class LuarocksWig(Wig):
+	pass
 
 def remove(wig_names):
 	init()
@@ -374,10 +375,9 @@ def install(wig_names, wigwamfile, enable, disable, git, version, env, force, ve
 		end = WigConfig.patch_dict_config(end, {wig_name : dict_config})
 	WigConfig.save_dict_config(P.wigwamfile, WigConfig.patch_dict_config(end, WigConfig(end).find_dependencies(unsatisfied = True)))
 	
-	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
-	requested = WigConfig(end)
+	requested, installed = WigConfig(end), WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	dependencies = requested.find_dependencies(wig_names or (set(requested) - set(installed)), dependencies = True)
-	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed)) + (wig_names if force else []))
+	to_build = filter(lambda wig_name: force or wig_name not in installed, dependencies)
 
 	build(to_build, verbose = verbose, dry = dry)
 
@@ -392,15 +392,14 @@ def upgrade(wig_names, recursive, verbose, dry):
 	end = WigConfig.patch_dict_config(old.copy(), patch)
 	WigConfig.save_dict_config(P.wigwamfile, end)
 
-	installed = WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
-	requested = WigConfig(end)
+	requested, installed = WigConfig(end), WigConfig(WigConfig.read_dict_config(P.wigwamfile_installed))
 	dependencies = requested.find_dependencies(wig_names, dependencies = True) + (requested.find_dependencies(wig_names, dependent = True) if recursive else [])
-	to_build = set(filter(lambda wig_name: wig_name in dependencies, requested.diff(installed)) + (wig_names if force else []))
+	to_build = filter(lambda wig_name: force or wig_name not in installed, dependencies)
 
 	build(wig_names, install_only_seeds = not recursive, dry = dry, verbose = verbose)
 
 def build(wig_names, verbose = False, dry = False):
-	def write_build_script(installation_script_path, wigs, env, installation_order):
+	def write_build_script(installation_script_path, env, installation_order):
 		if os.path.exists(installation_script_path):
 			os.remove(installation_script_path)
 
@@ -408,8 +407,8 @@ def build(wig_names, verbose = False, dry = False):
 			return
 
 		print('{} packages to be installed in the order below:'.format(len(installation_order)))
-		for wig_name in installation_order:
-			print('{0:10}'.format(wig_name) + ('    requires  {}'.format(', '.join(wigs[wig_name].dependencies)) if wigs[wig_name].dependencies else ''))
+		for wig in installation_order:
+			print('{:10}'.format(wig) + ('    requires  {}'.format(', '.join(wig.dependencies)) if wig.dependencies else ''))
 		print('')
 
 		build_script = [
@@ -451,17 +450,17 @@ def build(wig_names, verbose = False, dry = False):
 				echo "ok [elapsed $((TOC/60%60))m$((TOC%60))s]"
 			}
 			'''.replace('{}', P.activate_sh),
-			S.rm_rf(*[P.log_base(wig_name) for wig_name in installation_order])
+			S.rm_rf(*[P.log_base(wig.name) for wig in installation_order])
 		]
 		update_wigwamfile_installed = lambda d:	build_script.append('''cat <<"EOF" | update_wigwamfile_installed "{}"\n{}\nEOF\n'''.format(os.path.abspath(P.wigwamfile_installed), json.dumps(d)))
 		coalesce_list = lambda obj: obj if isinstance(obj, list) else [obj]
 
 		update_wigwamfile_installed(dict(_env = env))
-		for wig in map(wigs.get, installation_order):
+		for wig in installation_order:
 			skip_stages_spec = [('fetch', ['fetch']), ('configure', ['fetch', 'configure']), ('build', ['fetch', 'build']), ('install', ['install'])]
 			debug_script, debug_script_path = [], P.debug_script(wig.name)
 			debug_script += [
-				'''PREFIX="{}"'''.format(os.path.abspath(P.prefix)),
+				'PREFIX="{}"'.format(os.path.abspath(P.prefix)),
 				'source "{}"'.format(P.activate_sh),
 				S.cd(os.path.abspath(os.path.join(wig.paths.src_dir, wig.working_directory)))
 			]
@@ -534,9 +533,9 @@ def build(wig_names, verbose = False, dry = False):
 			out.write('\n'.join(activate_sh))
 
 	requested = WigConfig(WigConfig.read_dict_config(P.wigwamfile))
-	installation_order = filter(lambda wig_name: wig_name in wig_names, requested.compute_installation_order())
+	installation_order = filter(lambda wig: wig.name in wig_names, requested.compute_installation_order())
 	write_activate_files(requested.bin_dirs, requested.lib_dirs, requested.include_dirs, requested.python_dirs)
-	write_build_script(P.build_script, requested.wigs, requested.env, installation_order)
+	write_build_script(P.build_script, requested.env, installation_order)
 
 	if dry:
 		print('Dry run. Quitting.')
@@ -579,7 +578,6 @@ def init(wigwamfile = None):
 	for d in P.all_dirs:
 		if not os.path.exists(d):
 			os.makedirs(d)
-	
 	for wigwamfile_to_init, filler in [(P.wigwamfile, ((urllib2.urlopen if urlparse.urlparse(wigwamfile).netloc else open)(wigwamfile).read()) if wigwamfile else '{}'), (P.wigwamfile_installed, '{}')]:
 		if not os.path.exists(wigwamfile_to_init):
 			with open(wigwamfile_to_init, 'w') as f:
@@ -589,22 +587,6 @@ def log(wig_name, fetch, configure, build, install):
 	stages = ['fetch', 'configure', 'build', 'install']
 	stages = filter(locals().get, stages) or stages
 	subprocess.call('cat "{}" | less'.format('" "'.join([os.path.join(P.log_base(wig_name), stage + '.txt') for stage in stages])), shell = True)
-
-def search(wig_name):
-	filter_wig_names = lambda file_names: [file_name for file_name, ext in map(os.path.splitext, file_names) if ext == '.py']
-	to_json = lambda wig: {'name' : wig.name, 'dependencies' : wig.dependencies}
-
-	def all_wig_names():
-		for repo in P.repos:
-			if 'github' in repo:
-				github_api_clues = re.search('.*github.com/(?P<repo_owner>.+)/(?P<repo_name>.+)/tree/(?P<ref>.+)/(?P<path>.+)', repo).groupdict()
-				github_api_uri = 'https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}?ref={ref}'.format(**github_api_clues)
-				yield filter_wig_names([github_file_info['name'] for github_file_info in json.load(urllib2.urlopen(github_api_uri))])
-			else:
-				yield filter_wig_names(os.listdir(repo)) if os.path.exists(repo) else []
-		
-	wigs = map(WigConfig.create_wig, sorted(set([wig_name] if wig_name else itertools.chain(*all_wig_names()))))
-	print(json.dumps(map(to_json, wigs), indent = 2, sort_keys = True))
 
 def run(dry, verbose, cmds = []):
 	if os.path.exists(P.activate_sh):
@@ -682,10 +664,6 @@ if __name__ == '__main__':
 	cmd.add_argument('--configure', action = 'store_true')
 	cmd.add_argument('--build', action = 'store_true')
 	cmd.add_argument('--install', action = 'store_true')
-
-	cmd = subparsers.add_parser('search')
-	cmd.set_defaults(func = search)
-	cmd.add_argument('wig_name', default = None, nargs = '?')
 
 	cmd = subparsers.add_parser('remove')
 	cmd.set_defaults(func = remove)
