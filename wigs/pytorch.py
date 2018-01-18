@@ -17,4 +17,4 @@ class pytorch(PythonWig):
 
 	def switch_cudnn(self, on):
 		if on:
-			self.before_install += [S.export('CUDNN_LIBRARY', os.path.dirname(self.cfg('PATH_TO_CUDNN_SO'))), S.export('CUDNN_INCLUDE_DIR',  os.path.join(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')), '../include'))]
+			self.before_install += [S.export('CUDNN_LIBRARY', self.cfg('PATH_TO_CUDNN_SO')), S.export('CUDNN_INCLUDE_DIR',  os.path.join(os.path.dirname(self.cfg('PATH_TO_CUDNN_SO')), '../include'))]
