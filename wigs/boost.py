@@ -1,14 +1,15 @@
 class boost(Wig):
-	tarball_uri = 'http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.gz'
+	tarball_uri = 'https://github.com/boostorg/boost/archive/boost-1.66.0.tar.gz'
 	git_uri = 'https://github.com/boostorg/boost'
-	git_branch = 'boost-1.59.0'
+	git_branch = 'boost-1.66.0'
 	git_init_submodules = True
-	last_release_version = '1.59.0'
+	last_release_version = '1.66.0'
 	supported_features = ['python']
 	default_features = ['-python']
 	
 	def setup(self):
 		self.skip('make')
+		self.skip('configure')
 		self.bootstrap_flags = []
 		
 	def switch_python(self, on):
