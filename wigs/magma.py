@@ -1,7 +1,7 @@
 class magma(Wig):
 	tarball_uri = 'http://icl.cs.utk.edu/projectsfiles/magma/downloads/magma-{RELEASE_VERSION}.tar.gz'
 	dependencies = ['openblas']
-	last_release_version = '2.2.0'
+	last_release_version = '2.3.0'
 	config_access = ['PATH_TO_NVCC']
 	
 	def setup(self):
