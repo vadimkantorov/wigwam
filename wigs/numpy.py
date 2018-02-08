@@ -1,6 +1,6 @@
 class numpy(PythonWig):
 	tarball_uri = 'https://github.com/numpy/numpy/archive/v{RELEASE_VERSION}.tar.gz'
-	last_release_version = '1.11.2'
+	last_release_version = '1.14.0'
 	git_uri = 'https://github.com/numpy/numpy'
 	dependencies = ['cython'] # 'setuptools'
 	optional_dependencies = ['openblas']
