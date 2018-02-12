@@ -3,6 +3,7 @@ class protobuf(AutogenWig):
 	git_uri = 'https://github.com/google/protobuf'
 	last_release_version = '3.1.0'
 	supported_features = ['python']
+	dependencies = ['autoconf', 'automake', 'libtool']
 	
 	def switch_python_on(self):
 		self.after_install += ['cd python', S.python_setup_install]
