@@ -5,6 +5,7 @@ class magma(Wig):
 	config_access = ['PATH_TO_NVCC']
 	
 	def setup(self):
+		self.make_flags += ['lib', 'sparse-lib']
 		self.make_install_flags += [S.prefix_MAKE_INSTALL_FLAG]
 
 	def gen_configure_snippet(self):
