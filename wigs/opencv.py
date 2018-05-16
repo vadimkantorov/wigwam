@@ -1,7 +1,7 @@
 class opencv(CmakeWig):
-	tarball_uri = 'https://github.com/itseez/opencv/archive/{RELEASE_VERSION}.tar.gz'
+	tarball_uri = 'https://github.com/opencv/opencv/archive/{RELEASE_VERSION}.tar.gz'
 	last_release_version = '3.3.0'
-	git_uri = 'https://github.com/itseez/opencv'
+	git_uri = 'https://github.com/opencv/opencv'
 	dependencies = ['pkg-config']
 	optional_dependencies = ['ffmpeg', 'opencv_contrib', 'numpy']
 	supported_features = ['python', 'cuda', 'shared', 'tests', 'examples', 'ffmpeg', 'contrib', 'ipp']
