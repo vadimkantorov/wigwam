@@ -109,7 +109,7 @@ class S:
 	make = staticmethod(lambda flags: 'make %s' % ' '.join(flags))
 	makeflags = staticmethod(lambda flags: '%s="%s %s"' % (S.MAKEFLAGS, ' '.join(flags), os.environ.get(S.MAKEFLAGS, '')) if flags else '')
 	make_install = staticmethod(lambda flags: 'make install %s' % ' '.join(flags))
-	python_setup_install = 'python setup.py install --prefix="%s"' % PREFIX_PYTHON
+	python_setup_install = 'python2 setup.py install --prefix="%s"' % PREFIX_PYTHON
 	ln = staticmethod('ln -f -s "{}" "{}"'.format)
 	qq = staticmethod('"{}"'.format)
 	rm_rf = staticmethod(lambda *args: 'rm -rf %s' % ' '.join(map(S.qq, args)))
@@ -845,7 +845,7 @@ def gen_installation_script(installation_script_path, wigs, env, installation_or
 }
 ''')
 		w('''function update_wigwamfile_installed {
-	python -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
+	python2 -c "import sys, json; installed, diff = map(json.load, [open(sys.argv[-1]), sys.stdin]); installed.update(diff); json.dump(installed, open(sys.argv[-1], 'w'), indent = 2, sort_keys = True)" $@
 }
 ''')
 		w(S.dump_env)
